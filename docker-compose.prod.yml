@@ -19,6 +19,7 @@ services:
       - frontend
     networks:
       - public_net
+      - application_net
 
   backend:
     build:
