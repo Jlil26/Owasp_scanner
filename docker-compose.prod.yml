@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: owasp_nginx_prod
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
+      - static_volume:/var/www/frontend:ro
+      - reports_volume:/var/www/reports:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - public_net
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend.prod
+    container_name: owasp_backend_prod
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://owasp_user:${POSTGRES_PASSWORD}@postgres:5432/owasp_scan_pro
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=${JWT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - reports_volume:/app/storage/reports
+      - logs_volume:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - application_net
+      - scanner_net
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend.prod
+    container_name: owasp_frontend_prod
+    restart: always
+    volumes:
+      - static_volume:/usr/share/nginx/html
+    networks:
+      - application_net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: owasp_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_DB: owasp_scan_pro
+      POSTGRES_USER: owasp_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - backups_volume:/var/backups/owasp
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U owasp_user -d owasp_scan_pro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - application_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: owasp_redis_prod
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - application_net
+
+networks:
+  public_net:
+    driver: bridge
+  application_net:
+    driver: bridge
+    internal: true
+  scanner_net:
+    driver: bridge
+    internal: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_volume:
+  reports_volume:
+  logs_volume:
+  backups_volume:

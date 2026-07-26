@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    container_name: owasp_backend
+    restart: always
+    environment:
+      - ENVIRONMENT=development
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_USER=owasp_user
+      - POSTGRES_PASSWORD=owasp_password
+      - POSTGRES_DB=owasp_scan_pro
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - owasp_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    container_name: owasp_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - owasp_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: owasp_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: owasp_user
+      POSTGRES_PASSWORD: owasp_password
+      POSTGRES_DB: owasp_scan_pro
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U owasp_user -d owasp_scan_pro"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - owasp_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: owasp_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - owasp_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: owasp_nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - owasp_network
+
+networks:
+  owasp_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

@@ -1,0 +1,6 @@
+{
+  "name": "OWASP_SCAN_PRO",
+  "description": "OWASP_SCAN_PRO - Cybersecurity Vulnerability Management Platform Development Environment",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
