@@ -98,6 +98,13 @@ app.include_router(system_router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting OWASP_SCAN_PRO Backend Bootstrap Service")
+    try:
+        from app.core.database import Base, engine
+        import app.models  # noqa
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables verified/created successfully")
+    except Exception as e:
+        logger.warning(f"Database auto-initialization check skipped/deferred: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
