@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies and virtual environment
-FROM python:3.13-slim as builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ RUN python -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Hardened Runtime Image
-FROM python:3.13-slim as runner
+FROM python:3.13-slim AS runner
 
 WORKDIR /app
 
