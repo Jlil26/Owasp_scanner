@@ -44,18 +44,18 @@ export const ActivityJournal: React.FC = () => {
 
   const getActionBadge = (action: string) => {
     if (action.includes('THREAD')) {
-      return { label: 'Thread', bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30', icon: MessageSquare };
+      return { label: 'Fil Discussion', bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30', icon: MessageSquare };
     }
     if (action.includes('ATTACHMENT')) {
-      return { label: 'Attachment', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', icon: Paperclip };
+      return { label: 'Pièce Jointe', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', icon: Paperclip };
     }
     if (action.includes('COMMENT')) {
-      return { label: 'Comment', bg: 'bg-blue-500/10 text-blue-400 border-blue-500/30', icon: MessageSquare };
+      return { label: 'Commentaire', bg: 'bg-blue-500/10 text-blue-400 border-blue-500/30', icon: MessageSquare };
     }
     if (action.includes('MENTION')) {
       return { label: 'Mention', bg: 'bg-amber-500/10 text-amber-400 border-amber-500/30', icon: AtSign };
     }
-    return { label: 'Activity', bg: 'bg-slate-800 text-slate-300 border-slate-700', icon: Activity };
+    return { label: 'Activité', bg: 'bg-slate-800 text-slate-300 border-slate-700', icon: Activity };
   };
 
   return (
@@ -64,25 +64,30 @@ export const ActivityJournal: React.FC = () => {
         <div>
           <h3 className="text-base font-semibold text-white flex items-center gap-2">
             <Activity className="w-5 h-5 text-indigo-400" />
-            Collaboration Journal & Audit Log
+            Journal de Collaboration & Traçabilité D'Audit
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Immutable activity stream of discussions, proof uploads, comments, and mentions.
+            Flux d'activité immuable des discussions, téléversements de preuves, commentaires et mentions.
           </p>
         </div>
 
         {/* Filter bar */}
         <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
           <Filter className="w-3.5 h-3.5 text-slate-500 ml-1" />
-          {['ALL', 'THREAD', 'COMMENT', 'ATTACHMENT'].map(t => (
+          {[
+            { id: 'ALL', label: 'TOUS' },
+            { id: 'THREAD', label: 'FILS' },
+            { id: 'COMMENT', label: 'COMMENTS' },
+            { id: 'ATTACHMENT', label: 'PREUVES' }
+          ].map(t => (
             <button
-              key={t}
-              onClick={() => setFilterType(t)}
+              key={t.id}
+              onClick={() => setFilterType(t.id)}
               className={`px-2.5 py-1 rounded transition text-xs font-medium ${
-                filterType === t ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
+                filterType === t.id ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'
               }`}
             >
-              {t}
+              {t.label}
             </button>
           ))}
         </div>
@@ -91,10 +96,10 @@ export const ActivityJournal: React.FC = () => {
       {/* Activity Stream */}
       <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
         {loading ? (
-          <div className="text-center py-12 text-slate-500 text-xs">Loading activity stream...</div>
+          <div className="text-center py-12 text-slate-500 text-xs">Chargement du journal d'activité...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-slate-500 text-xs">
-            No collaboration activities logged yet.
+            Aucune activité de collaboration enregistrée pour le moment.
           </div>
         ) : (
           filtered.map(act => {
@@ -122,7 +127,7 @@ export const ActivityJournal: React.FC = () => {
                     </div>
                     <span className="text-[10px] text-slate-500 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {new Date(act.created_at).toLocaleString()}
+                      {new Date(act.created_at).toLocaleString('fr-FR')}
                     </span>
                   </div>
 

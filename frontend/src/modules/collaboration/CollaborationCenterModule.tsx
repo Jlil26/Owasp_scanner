@@ -21,23 +21,23 @@ export const CollaborationCenterModule: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> Sprint 9 Module
+                <Sparkles className="w-3 h-3" /> Module Collaboration
               </span>
-              <span className="text-xs text-slate-400">Internal Communication Hub</span>
+              <span className="text-xs text-slate-400">Hub de Communication Interne</span>
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-              Collaboration & Communication Center
+              Espace Collaboration & Messagerie Sécurisée
             </h1>
             <p className="text-xs text-slate-300 max-w-2xl mt-1 leading-relaxed">
-              Internal messaging threads, vulnerability remediation comments, mentions (@user), secure proof attachments, report feedback, and unified activity audit journal.
+              Fils de discussion internes, commentaires de remédiation, mentions (@utilisateur), preuves d'audit jointes, retours sur rapports et journal d'activité unifié.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-xl text-right">
-              <span className="text-[10px] text-slate-400 block font-medium">Internal Security Status</span>
+              <span className="text-[10px] text-slate-400 block font-medium">Statut Sécurité Interne</span>
               <span className="text-xs font-bold text-emerald-400 flex items-center justify-end gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Direct Messaging Active
+                <CheckCircle2 className="w-3.5 h-3.5" /> Messagerie Directe Active
               </span>
             </div>
           </div>
@@ -54,7 +54,7 @@ export const CollaborationCenterModule: React.FC = () => {
             }`}
           >
             <MessageSquare className="w-4 h-4" />
-            Internal Messaging
+            Messagerie Interne
           </button>
 
           <button
@@ -66,7 +66,7 @@ export const CollaborationCenterModule: React.FC = () => {
             }`}
           >
             <Shield className="w-4 h-4" />
-            Vulnerability Discussions
+            Discussions Vulnérabilités
           </button>
 
           <button
@@ -78,7 +78,7 @@ export const CollaborationCenterModule: React.FC = () => {
             }`}
           >
             <FileText className="w-4 h-4" />
-            Report Feedback
+            Retours sur Rapports
           </button>
 
           <button
@@ -90,7 +90,7 @@ export const CollaborationCenterModule: React.FC = () => {
             }`}
           >
             <Activity className="w-4 h-4" />
-            Activity Journal
+            Journal d'Activité
           </button>
 
           <button
@@ -102,7 +102,7 @@ export const CollaborationCenterModule: React.FC = () => {
             }`}
           >
             <Paperclip className="w-4 h-4" />
-            Proof Attachments
+            Pièces Jointes & Preuves
           </button>
         </div>
       </div>
@@ -112,13 +112,13 @@ export const CollaborationCenterModule: React.FC = () => {
       {activeTab === 'vulnerabilities' && (
         <VulnerabilityDiscussionPanel
           vulnerabilityId="v-001"
-          vulnerabilityTitle="SQL Injection in Search Query Parameter (A03:2021-Injection)"
+          vulnerabilityTitle="Injection SQL dans le paramètre de recherche (A03:2021-Injection)"
         />
       )}
       {activeTab === 'reports' && (
         <ReportCommentsPanel
           reportId="rep-001"
-          reportTitle="OWASP_SCAN_PRO Security Audit Report v1.0"
+          reportTitle="Rapport d'Audit Sécurité OWASP_SCAN_PRO v1.0"
         />
       )}
       {activeTab === 'activity' && <ActivityJournal />}

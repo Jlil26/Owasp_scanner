@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShieldCheck, Lock, Cpu, ArrowRight, Building2, UserCheck, ShieldAlert, FileText, CheckCircle2, Sparkles, Terminal, Layers, Database, ChevronRight } from 'lucide-react';
+import { ArrowRight, Building2, Lock, ShieldAlert, UserCheck, CheckCircle2, FileText, Terminal, Database, ShieldCheck } from 'lucide-react';
+import { BrandLogo } from '../../components/BrandLogo';
 
 interface LandingPageProps {
   onNavigateLogin: () => void;
@@ -16,19 +17,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-purple-500 selection:text-white">
       {/* Top Public Navigation Header */}
       <header className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 via-indigo-600 to-violet-500 p-0.5 shadow-lg shadow-purple-900/30 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5 text-purple-400" />
-            </div>
-          </div>
-          <div>
-            <span className="font-black text-lg text-white tracking-wider font-mono">OWASP<span className="text-purple-400">_SCAN_PRO</span></span>
-            <span className="text-[10px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-2 py-0.5 rounded-full ml-2 font-mono font-bold uppercase hidden sm:inline-block">
-              SaaS v1.0
-            </span>
-          </div>
-        </div>
+        <BrandLogo size="md" subtitle="SaaS PME v1.0" />
 
         <div className="flex items-center space-x-3">
           <button
@@ -52,12 +41,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         {/* Background Ambient Glow */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="inline-flex items-center space-x-2 bg-purple-500/10 border border-purple-500/20 text-purple-300 px-3.5 py-1.5 rounded-full text-xs font-medium backdrop-blur-md">
-          <Sparkles className="w-4 h-4 text-purple-400" />
-          <span>Plateforme SaaS de Gestion Continue des Vulnérabilités PME</span>
-        </div>
-
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-tight">
+        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white max-w-4xl mx-auto leading-tight pt-4">
           La sécurité continue simplifiée pour votre entreprise
         </h1>
 

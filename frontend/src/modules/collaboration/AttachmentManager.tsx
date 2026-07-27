@@ -82,14 +82,14 @@ export const AttachmentManager: React.FC = () => {
         <div>
           <h3 className="text-base font-semibold text-white flex items-center gap-2">
             <Paperclip className="w-5 h-5 text-indigo-400" />
-            Secure Evidence & Attachment Repository
+            Dépôt Sécurisé de Preuves & Pièces Jointes
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            Store Proof-of-Concepts, PCAP captures, logs, and patches with SHA-256 non-repudiation hashing.
+            Stockez vos PoC, captures PCAP, journaux d'erreurs et correctifs avec empreinte SHA-256 infalsifiable.
           </p>
         </div>
         <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 font-medium">
-          <ShieldCheck className="w-4 h-4" /> SHA-256 Verified
+          <ShieldCheck className="w-4 h-4" /> Empreinte SHA-256 Vérifiée
         </span>
       </div>
 
@@ -106,10 +106,10 @@ export const AttachmentManager: React.FC = () => {
       >
         <Upload className="w-8 h-8 text-indigo-400 opacity-80 mb-1" />
         <p className="text-xs font-semibold text-white">
-          Drag & Drop Proof Evidence Files or <span className="text-indigo-400 underline cursor-pointer">Browse</span>
+          Glissez & Déposez vos fichiers de preuve ou <span className="text-indigo-400 underline cursor-pointer">Parcourir</span>
         </p>
         <p className="text-[11px] text-slate-500">
-          Supported: PCAP, LOG, PDF, PNG, JPG, JSON, CSV (Max size 10MB)
+          Formats supportés : PCAP, LOG, PDF, PNG, JPG, JSON, CSV (Taille max : 10 Mo)
         </p>
         <input
           type="file"
@@ -121,21 +121,21 @@ export const AttachmentManager: React.FC = () => {
           htmlFor="file-attachment-input"
           className="mt-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition shadow"
         >
-          Select File
+          Sélectionner un fichier
         </label>
       </div>
 
       {/* Attachments List */}
       <div className="space-y-3">
         <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          Attached Proof Files ({attachments.length})
+          Fichiers de Preuve Joints ({attachments.length})
         </h4>
 
         {loading ? (
-          <div className="text-center py-6 text-xs text-slate-500">Loading attachments...</div>
+          <div className="text-center py-6 text-xs text-slate-500">Chargement des pièces jointes...</div>
         ) : attachments.length === 0 ? (
           <div className="text-center py-6 text-xs text-slate-500 bg-slate-950 rounded-lg border border-slate-800">
-            No attachments uploaded yet. Drag and drop files above.
+            Aucune pièce jointe téléversée. Glissez-déposez des fichiers ci-dessus.
           </div>
         ) : (
           attachments.map(att => (
@@ -150,11 +150,11 @@ export const AttachmentManager: React.FC = () => {
                 <div>
                   <p className="font-semibold text-white">{att.filename}</p>
                   <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                    MIME: {att.file_type} • Size: {(att.file_size / 1024).toFixed(1)} KB • By {att.uploader_name}
+                    MIME : {att.file_type} • Taille : {(att.file_size / 1024).toFixed(1)} Ko • Par {att.uploader_name}
                   </p>
                   <p className="text-[10px] text-emerald-400 font-mono mt-0.5 flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3" />
-                    SHA256: {att.sha256_hash}
+                    SHA256 : {att.sha256_hash}
                   </p>
                 </div>
               </div>
@@ -163,14 +163,14 @@ export const AttachmentManager: React.FC = () => {
                 <button
                   onClick={() => window.open(att.file_path, '_blank')}
                   className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2 rounded-lg transition"
-                  title="Download File"
+                  title="Télécharger le fichier"
                 >
                   <Download className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => handleDelete(att.id)}
                   className="bg-red-500/10 hover:bg-red-500/20 text-red-400 p-2 rounded-lg border border-red-500/20 transition"
-                  title="Delete File"
+                  title="Supprimer le fichier"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

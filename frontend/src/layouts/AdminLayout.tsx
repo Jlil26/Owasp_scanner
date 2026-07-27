@@ -18,8 +18,14 @@ import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Sparkles,
-  Key
+  Key,
+  Edit3,
+  Trash2,
+  Lock,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  X
 } from 'lucide-react';
 import { User as UserType, Company, UserRole } from '../types/auth';
 import { BusinessDashboardModule } from '../modules/dashboard/BusinessDashboardModule';
@@ -28,6 +34,7 @@ import { MonitoringPlatformModule } from '../modules/monitoring/MonitoringPlatfo
 import { VulnerabilityModule } from '../modules/vulnerabilities/VulnerabilityModule';
 import { ReportModule } from '../modules/reports/ReportModule';
 import { NotificationModule } from '../modules/notifications/NotificationModule';
+import { BrandLogo } from '../components/BrandLogo';
 
 interface AdminLayoutProps {
   user: UserType;
@@ -35,6 +42,17 @@ interface AdminLayoutProps {
   onLogout: () => void;
   onSwitchRole: (role: UserRole) => void;
   onResetData: () => void;
+}
+
+interface TeamMember {
+  id: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  role: 'SUPER_ADMIN' | 'AUDITOR' | 'EMPLOYEE';
+  status: 'Actif' | 'Inactif';
+  password?: string;
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({
@@ -48,10 +66,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     'dashboard' | 'company' | 'users' | 'roles' | 'assets' | 'targets' | 'scans' | 'vulnerabilities' | 'reports' | 'stats' | 'notifications' | 'audit_logs' | 'settings' | 'qa_cert'
   >('dashboard');
 
-  const [teamList, setTeamList] = useState([
-    { id: user.id, name: `${user.first_name} ${user.last_name}`, email: user.email, role: 'SUPER_ADMIN', status: 'Actif' },
-    { id: 'usr-aud-01', name: 'Sophie Martin', email: 'auditor@pme.com', role: 'AUDITOR', status: 'Actif' },
-    { id: 'usr-emp-01', name: 'Thomas Bernard', email: 'employee@pme.com', role: 'EMPLOYEE', status: 'Actif' }
+  const [teamList, setTeamList] = useState<TeamMember[]>([
+    { id: user.id, firstName: user.first_name, lastName: user.last_name, name: `${user.first_name} ${user.last_name}`, email: user.email, role: 'SUPER_ADMIN', status: 'Actif', password: '••••••••' },
+    { id: 'usr-aud-01', firstName: 'Sophie', lastName: 'Martin', name: 'Sophie Martin', email: 'auditor@pme.com', role: 'AUDITOR', status: 'Actif', password: '••••••••' },
+    { id: 'usr-emp-01', firstName: 'Thomas', lastName: 'Bernard', name: 'Thomas Bernard', email: 'employee@pme.com', role: 'EMPLOYEE', status: 'Actif', password: '••••••••' }
   ]);
 
   const [targetsList, setTargetsList] = useState([
@@ -59,30 +77,83 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     { id: 'tgt-02', name: 'API Gateway Backend', url: 'https://api.company-pme.fr', type: 'REST API', status: 'Vérifié' }
   ]);
 
+  // New User Form State
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<'AUDITOR' | 'EMPLOYEE'>('AUDITOR');
+  const [newUserRole, setNewUserRole] = useState<'SUPER_ADMIN' | 'AUDITOR' | 'EMPLOYEE'>('AUDITOR');
   const [newUserFirstName, setNewUserFirstName] = useState('');
   const [newUserLastName, setNewUserLastName] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  // User Edit Modal State
+  const [editingUser, setEditingUser] = useState<TeamMember | null>(null);
+  const [editPassword, setEditPassword] = useState('');
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [userNotification, setUserNotification] = useState<string | null>(null);
 
   const [newTargetName, setNewTargetName] = useState('');
   const [newTargetUrl, setNewTargetUrl] = useState('');
 
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    let pass = '';
+    for (let i = 0; i < 12; i++) {
+      pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return pass;
+  };
+
   const handleAddUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (newUserEmail && newUserFirstName) {
-      setTeamList([
-        ...teamList,
-        {
-          id: `usr-${Date.now()}`,
-          name: `${newUserFirstName} ${newUserLastName || ''}`,
-          email: newUserEmail,
-          role: newUserRole,
-          status: 'Actif'
-        }
-      ]);
+      const passToSet = newUserPassword || generatePassword();
+      const createdUser: TeamMember = {
+        id: `usr-${Date.now()}`,
+        firstName: newUserFirstName,
+        lastName: newUserLastName || '',
+        name: `${newUserFirstName} ${newUserLastName || ''}`.trim(),
+        email: newUserEmail,
+        role: newUserRole,
+        status: 'Actif',
+        password: passToSet
+      };
+
+      setTeamList([...teamList, createdUser]);
+      setUserNotification(`Utilisateur ${createdUser.name} créé avec le mot de passe : ${passToSet}`);
       setNewUserEmail('');
       setNewUserFirstName('');
       setNewUserLastName('');
+      setNewUserPassword('');
+      setTimeout(() => setUserNotification(null), 8000);
+    }
+  };
+
+  const handleUpdateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    setTeamList(teamList.map(u => {
+      if (u.id === editingUser.id) {
+        return {
+          ...editingUser,
+          name: `${editingUser.firstName} ${editingUser.lastName || ''}`.trim(),
+          password: editPassword ? editPassword : u.password
+        };
+      }
+      return u;
+    }));
+
+    setUserNotification(`Compte et mot de passe mis à jour avec succès pour ${editingUser.firstName} ${editingUser.lastName}!`);
+    setEditingUser(null);
+    setEditPassword('');
+    setTimeout(() => setUserNotification(null), 5000);
+  };
+
+  const handleDeleteUser = (userId: string, userName: string) => {
+    if (confirm(`Voulez-vous vraiment supprimer le compte de ${userName} ?`)) {
+      setTeamList(teamList.filter(u => u.id !== userId));
+      setUserNotification(`Compte de ${userName} supprimé.`);
+      setTimeout(() => setUserNotification(null), 4000);
     }
   };
 
@@ -109,19 +180,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       {/* Sidebar Navigation for Super Admin (280px width) */}
       <aside className="w-full md:w-[280px] bg-white border-r border-[#ECECF2] p-5 flex flex-col justify-between shrink-0 shadow-sm">
         <div className="space-y-6">
-          {/* Brand Logo with Security Gradient */}
-          <div className="flex items-center space-x-3 px-1 py-1">
-            <div className="w-10 h-10 rounded-2xl security-gradient flex items-center justify-center shadow-md shadow-purple-600/20">
-              <ShieldCheck className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-[#18181B]">
-                OWASP<span className="security-gradient-text">_SCAN_PRO</span>
-              </span>
-              <span className="block text-[10px] text-[#71717A] font-medium uppercase tracking-wider">
-                Super Admin Center
-              </span>
-            </div>
+          {/* Brand Logo */}
+          <div className="px-1 py-1">
+            <BrandLogo size="md" subtitle="Super Admin Center" />
           </div>
 
           {/* Company Badge */}
@@ -346,6 +407,19 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           </div>
         </header>
 
+        {/* Global User Notification Banner */}
+        {userNotification && (
+          <div className="mx-6 mt-4 p-3.5 bg-purple-50 border border-purple-200 text-purple-900 rounded-xl text-xs font-medium flex items-center justify-between shadow-xs">
+            <div className="flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />
+              <span>{userNotification}</span>
+            </div>
+            <button onClick={() => setUserNotification(null)} className="text-purple-400 hover:text-purple-700 cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {/* Dynamic Main Workspace Views */}
         <div className="p-6 md:p-8 space-y-6 max-w-7xl">
           {activeTab === 'dashboard' && <BusinessDashboardModule />}
@@ -379,72 +453,127 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
           {activeTab === 'users' && (
             <div className="space-y-6">
+              {/* Add User Form */}
               <div className="bg-white border border-[#ECECF2] rounded-2xl p-6 shadow-sm space-y-4">
                 <h3 className="text-base font-bold text-[#18181B] flex items-center space-x-2">
                   <Users className="w-5 h-5 text-[#6D28D9]" />
-                  <span>Ajouter un collaborateur à la PME</span>
+                  <span>Créer un compte collaborateur</span>
                 </h3>
 
-                <form onSubmit={handleAddUser} className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Prénom *"
-                    value={newUserFirstName}
-                    onChange={e => setNewUserFirstName(e.target.value)}
-                    className="px-4 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] focus:border-[#6D28D9]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Nom"
-                    value={newUserLastName}
-                    onChange={e => setNewUserLastName(e.target.value)}
-                    className="px-4 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] focus:border-[#6D28D9]"
-                  />
-                  <input
-                    type="email"
-                    required
-                    placeholder="email@pme.com *"
-                    value={newUserEmail}
-                    onChange={e => setNewUserEmail(e.target.value)}
-                    className="px-4 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] focus:border-[#6D28D9]"
-                  />
-                  <div className="flex gap-2">
-                    <select
-                      value={newUserRole}
-                      onChange={e => setNewUserRole(e.target.value as any)}
-                      className="px-3 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] font-mono text-xs"
-                    >
-                      <option value="AUDITOR">AUDITOR</option>
-                      <option value="EMPLOYEE">EMPLOYEE</option>
-                    </select>
-                    <button
-                      type="submit"
-                      className="px-4 py-2.5 btn-primary text-xs font-bold rounded-xl cursor-pointer shrink-0"
-                    >
-                      Créer Membre
-                    </button>
+                <form onSubmit={handleAddUser} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Prénom *"
+                      value={newUserFirstName}
+                      onChange={e => setNewUserFirstName(e.target.value)}
+                      className="px-4 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] focus:border-[#6D28D9]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Nom"
+                      value={newUserLastName}
+                      onChange={e => setNewUserLastName(e.target.value)}
+                      className="px-4 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] focus:border-[#6D28D9]"
+                    />
+                    <input
+                      type="email"
+                      required
+                      placeholder="email@pme.com *"
+                      value={newUserEmail}
+                      onChange={e => setNewUserEmail(e.target.value)}
+                      className="px-4 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] focus:border-[#6D28D9]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] text-[#71717A] font-medium mb-1">Rôle RBAC</label>
+                      <select
+                        value={newUserRole}
+                        onChange={e => setNewUserRole(e.target.value as any)}
+                        className="w-full px-3 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] font-mono text-xs"
+                      >
+                        <option value="AUDITOR">AUDITEUR SÉCURITÉ</option>
+                        <option value="EMPLOYEE">DÉVELOPPEUR / EMPLOYÉ</option>
+                        <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-[#71717A] font-medium mb-1">Mot de passe initial</label>
+                      <div className="relative flex items-center">
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          placeholder="Laissez vide pour auto-générer"
+                          value={newUserPassword}
+                          onChange={e => setNewUserPassword(e.target.value)}
+                          className="w-full pl-3 pr-16 py-2.5 bg-[#FAFAFC] border border-[#ECECF2] rounded-xl text-[#18181B] font-mono text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-9 text-[#71717A] hover:text-[#18181B] p-1 cursor-pointer"
+                          title="Afficher/Masquer"
+                        >
+                          {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setNewUserPassword(generatePassword())}
+                          className="absolute right-2 text-[#6D28D9] hover:text-[#5B21B6] p-1 cursor-pointer"
+                          title="Générer un mot de passe fort"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-end">
+                      <button
+                        type="submit"
+                        className="w-full py-2.5 bg-[#6D28D9] hover:bg-[#5B21B6] text-white text-xs font-bold rounded-xl cursor-pointer transition shadow-md shadow-purple-600/20"
+                      >
+                        + Créer le compte
+                      </button>
+                    </div>
                   </div>
                 </form>
               </div>
 
               {/* Members Table */}
               <div className="bg-white border border-[#ECECF2] rounded-2xl p-6 shadow-sm space-y-4">
-                <h3 className="text-base font-bold text-[#18181B]">Liste des utilisateurs de la PME</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-[#18181B]">Liste des comptes utilisateurs ({teamList.length})</h3>
+                  <span className="text-xs text-[#71717A]">
+                    Total: <strong className="text-[#18181B]">{teamList.length}</strong> membres
+                  </span>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#FAFAFC] text-[#71717A] font-semibold uppercase text-[10px] border-b border-[#ECECF2]">
                       <tr>
-                        <th className="p-3">Nom</th>
+                        <th className="p-3">Utilisateur</th>
                         <th className="p-3">Email</th>
                         <th className="p-3">Rôle RBAC</th>
                         <th className="p-3">Statut</th>
+                        <th className="p-3">Mot de Passe</th>
+                        <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#ECECF2]">
-                      {teamList.map((m, i) => (
-                        <tr key={i} className="hover:bg-[#FAFAFC]">
-                          <td className="p-3 font-bold text-[#18181B]">{m.name}</td>
+                      {teamList.map((m) => (
+                        <tr key={m.id} className="hover:bg-[#FAFAFC]">
+                          <td className="p-3 font-bold text-[#18181B]">
+                            {m.name}
+                            {m.id === user.id && (
+                              <span className="ml-2 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[9px] font-mono uppercase">
+                                Vous
+                              </span>
+                            )}
+                          </td>
                           <td className="p-3 font-mono text-[#71717A]">{m.email}</td>
                           <td className="p-3">
                             <span className={`px-2.5 py-1 rounded-lg font-mono font-bold text-[10px] ${
@@ -452,16 +581,184 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                               m.role === 'AUDITOR' ? 'bg-[#EFF6FF] text-[#2563EB]' :
                               'bg-[#DCFCE7] text-[#166534]'
                             }`}>
-                              {m.role}
+                              {m.role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : m.role === 'AUDITOR' ? 'AUDITEUR' : 'EMPLOYÉ'}
                             </span>
                           </td>
-                          <td className="p-3 text-emerald-600 font-bold">{m.status}</td>
+                          <td className="p-3">
+                            <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${
+                              m.status === 'Actif' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {m.status}
+                            </span>
+                          </td>
+                          <td className="p-3 font-mono text-slate-500">
+                            <span className="flex items-center gap-1.5 text-[11px]">
+                              <Lock className="w-3 h-3 text-slate-400" />
+                              <span>{m.password ? 'Défini' : '••••••••'}</span>
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => {
+                                  setEditingUser({ ...m });
+                                  setEditPassword('');
+                                }}
+                                className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-[#6D28D9] border border-purple-200 rounded-lg font-semibold text-[11px] flex items-center space-x-1 cursor-pointer"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                                <span>Modifier</span>
+                              </button>
+
+                              {m.id !== user.id && (
+                                <button
+                                  onClick={() => handleDeleteUser(m.id, m.name)}
+                                  className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg font-semibold text-[11px] flex items-center space-x-1 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Supprimer</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               </div>
+
+              {/* Edit User Modal */}
+              {editingUser && (
+                <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full p-6 space-y-5 text-slate-900 animate-in fade-in zoom-in duration-150">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div className="flex items-center space-x-2">
+                        <Edit3 className="w-5 h-5 text-[#6D28D9]" />
+                        <h3 className="font-bold text-base">Modifier le compte de {editingUser.name}</h3>
+                      </div>
+                      <button
+                        onClick={() => setEditingUser(null)}
+                        className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleUpdateUser} className="space-y-4 text-xs">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-600 font-medium mb-1">Prénom</label>
+                          <input
+                            type="text"
+                            required
+                            value={editingUser.firstName}
+                            onChange={e => setEditingUser({ ...editingUser, firstName: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-600 font-medium mb-1">Nom</label>
+                          <input
+                            type="text"
+                            value={editingUser.lastName}
+                            onChange={e => setEditingUser({ ...editingUser, lastName: e.target.value })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-600 font-medium mb-1">Adresse e-mail</label>
+                        <input
+                          type="email"
+                          required
+                          value={editingUser.email}
+                          onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-600 font-medium mb-1">Rôle RBAC</label>
+                          <select
+                            value={editingUser.role}
+                            onChange={e => setEditingUser({ ...editingUser, role: e.target.value as any })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
+                          >
+                            <option value="SUPER_ADMIN">SUPER ADMIN</option>
+                            <option value="AUDITOR">AUDITEUR SÉCURITÉ</option>
+                            <option value="EMPLOYEE">EMPLOYÉ / DÉVELOPPEUR</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-600 font-medium mb-1">Statut du compte</label>
+                          <select
+                            value={editingUser.status}
+                            onChange={e => setEditingUser({ ...editingUser, status: e.target.value as any })}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
+                          >
+                            <option value="Actif">Actif</option>
+                            <option value="Inactif">Inactif / Suspendu</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 bg-purple-50 border border-purple-100 rounded-xl space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-purple-900 font-bold">
+                            Changer / Réinitialiser le mot de passe
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setEditPassword(generatePassword())}
+                            className="text-[11px] text-[#6D28D9] underline hover:text-purple-900 font-mono cursor-pointer"
+                          >
+                            Générer un mot de passe
+                          </button>
+                        </div>
+                        <div className="relative flex items-center">
+                          <input
+                            type={showEditPassword ? 'text' : 'password'}
+                            placeholder="Saisissez un nouveau mot de passe..."
+                            value={editPassword}
+                            onChange={e => setEditPassword(e.target.value)}
+                            className="w-full pl-3 pr-10 py-2 bg-white border border-purple-200 rounded-lg text-slate-900 font-mono"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowEditPassword(!showEditPassword)}
+                            className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          >
+                            {showEditPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-purple-700">
+                          Laissez vide si vous ne souhaitez pas modifier le mot de passe actuel.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-end space-x-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingUser(null)}
+                          className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium cursor-pointer"
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-5 py-2 bg-[#6D28D9] hover:bg-[#5B21B6] text-white font-bold rounded-xl shadow-md shadow-purple-600/20 cursor-pointer"
+                        >
+                          Enregistrer les modifications
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

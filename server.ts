@@ -1060,7 +1060,7 @@ async function startServer() {
     {
       id: 'thr-001',
       vulnerability_id: 'v-001',
-      subject: 'Discussion: SQL Injection in Search Query Parameter',
+      subject: 'Discussion : Injection SQL dans le paramètre de recherche',
       created_at: new Date(Date.now() - 7200000).toISOString(),
       updated_at: new Date(Date.now() - 3600000).toISOString(),
       messages: [
@@ -1068,9 +1068,9 @@ async function startServer() {
           id: 'msg-001',
           thread_id: 'thr-001',
           sender_id: 'u-002',
-          sender_name: 'Auditor User',
+          sender_name: 'Auditeur Sécurité',
           sender_role: 'AUDITOR',
-          content: 'Hello @Dev, please review the SQL payload log attached in findings before pushing the patch.',
+          content: 'Bonjour @Dev, veuillez vérifier le journal de payload SQL joint dans les constatations avant de déployer le correctif.',
           created_at: new Date(Date.now() - 7200000).toISOString(),
           updated_at: new Date(Date.now() - 7200000).toISOString()
         },
@@ -1080,7 +1080,7 @@ async function startServer() {
           sender_id: 'emp-001',
           sender_name: 'Dev Lead',
           sender_role: 'EMPLOYEE',
-          content: 'Understood @Auditor, I am replacing direct SQL queries with SQLAlchemy ORM parameterized statements.',
+          content: 'Bien reçu @Auditeur, je remplace les requêtes SQL directes par des instructions paramétrées via l\'ORM SQLAlchemy.',
           created_at: new Date(Date.now() - 3600000).toISOString(),
           updated_at: new Date(Date.now() - 3600000).toISOString()
         }
@@ -1093,7 +1093,7 @@ async function startServer() {
       id: 'att-001',
       company_id: 'tenant-001',
       uploader_id: 'u-002',
-      uploader_name: 'Auditor User',
+      uploader_name: 'Auditeur Sécurité',
       resource_type: 'vulnerability',
       resource_id: 'v-001',
       filename: 'sqli_proof_payload.pcap',
@@ -1110,12 +1110,12 @@ async function startServer() {
       id: 'act-001',
       company_id: 'tenant-001',
       user_id: 'u-002',
-      user_name: 'Auditor User',
+      user_name: 'Auditeur Sécurité',
       user_role: 'AUDITOR',
       action: 'THREAD_CREATED',
       resource_type: 'vulnerability',
       resource_id: 'v-001',
-      summary: 'Created discussion thread: Discussion: SQL Injection in Search Query Parameter',
+      summary: 'Fil de discussion créé : Injection SQL dans le paramètre de recherche',
       details: null,
       created_at: new Date(Date.now() - 7200000).toISOString()
     },
@@ -1123,13 +1123,13 @@ async function startServer() {
       id: 'act-002',
       company_id: 'tenant-001',
       user_id: 'u-002',
-      user_name: 'Auditor User',
+      user_name: 'Auditeur Sécurité',
       user_role: 'AUDITOR',
       action: 'ATTACHMENT_UPLOADED',
       resource_type: 'vulnerability',
       resource_id: 'v-001',
-      summary: 'Uploaded proof file: sqli_proof_payload.pcap (142 KB, SHA256: e3b0c442...)',
-      details: 'MIME: application/x-pcap',
+      summary: 'Fichier de preuve téléversé : sqli_proof_payload.pcap (142 Ko, SHA256 : e3b0c442...)',
+      details: 'MIME : application/x-pcap',
       created_at: new Date(Date.now() - 7200000).toISOString()
     },
     {
@@ -1141,8 +1141,8 @@ async function startServer() {
       action: 'COMMENT_CREATED',
       resource_type: 'vulnerability',
       resource_id: 'v-001',
-      summary: 'Commented on vulnerability SQL Injection in Search Query Parameter',
-      details: 'I have started applying parameterized queries on search repository.',
+      summary: 'Commentaire sur la vulnérabilité Injection SQL dans le paramètre de recherche',
+      details: 'J\'ai commencé à appliquer les requêtes paramétrées dans le dépôt de recherche.',
       created_at: new Date(Date.now() - 3600000).toISOString()
     }
   ];
@@ -1153,9 +1153,9 @@ async function startServer() {
         id: 'rc-001',
         report_id: 'rep-001',
         author_id: 'u-002',
-        author_name: 'Auditor User',
+        author_name: 'Auditeur Sécurité',
         author_role: 'AUDITOR',
-        content: 'Report verified. All OWASP Top 10 vulnerabilities are mapped accurately.',
+        content: 'Rapport vérifié. Toutes les vulnérabilités du Top 10 OWASP sont correctement cartographiées.',
         created_at: new Date(Date.now() - 86400000).toISOString(),
         updated_at: new Date(Date.now() - 86400000).toISOString()
       }

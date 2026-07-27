@@ -13,13 +13,13 @@ import {
   BarChart3,
   User,
   ShieldCheck,
-  Sparkles,
   Layers
 } from 'lucide-react';
 import { User as UserType, Company, UserRole } from '../types/auth';
 import { VulnerabilityModule } from '../modules/vulnerabilities/VulnerabilityModule';
 import { CollaborationCenterModule } from '../modules/collaboration/CollaborationCenterModule';
 import { NotificationModule } from '../modules/notifications/NotificationModule';
+import { BrandLogo } from '../components/BrandLogo';
 
 interface EmployeeLayoutProps {
   user: UserType;
@@ -43,19 +43,9 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
       {/* Sidebar Navigation for Employee (280px width) */}
       <aside className="w-full md:w-[280px] bg-white border-r border-[#ECECF2] p-5 flex flex-col justify-between shrink-0 shadow-sm">
         <div className="space-y-6">
-          {/* Brand Logo with Security Gradient */}
-          <div className="flex items-center space-x-3 px-1 py-1">
-            <div className="w-10 h-10 rounded-2xl security-gradient flex items-center justify-center shadow-md shadow-purple-600/20">
-              <UserCheck className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <span className="font-extrabold text-base tracking-tight text-[#18181B]">
-                OWASP<span className="security-gradient-text">_SCAN_PRO</span>
-              </span>
-              <span className="block text-[10px] text-[#71717A] font-medium uppercase tracking-wider">
-                Developer Workspace
-              </span>
-            </div>
+          {/* Brand Logo */}
+          <div className="px-1 py-1">
+            <BrandLogo size="md" subtitle="Espace Développeur & Remédiation" />
           </div>
 
           {/* Developer Team Badge */}
@@ -158,7 +148,7 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
           <div>
             <h1 className="text-base font-bold text-[#18181B] flex items-center gap-2">
               <UserCheck className="w-5 h-5 text-[#16A34A]" />
-              Developer Remediation Hub
+              Espace Développeur & Remédiation
             </h1>
           </div>
 

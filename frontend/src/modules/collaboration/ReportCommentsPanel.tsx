@@ -70,19 +70,19 @@ export const ReportCommentsPanel: React.FC<ReportCommentsPanelProps> = ({
         <div className="flex items-center gap-2">
           <FileText className="w-5 h-5 text-indigo-400" />
           <div>
-            <h3 className="text-sm font-semibold text-white">Report Review & Audit Feedback</h3>
-            <p className="text-xs text-slate-400">{reportTitle} (ID: {reportId})</p>
+            <h3 className="text-sm font-semibold text-white">Revue de Rapport & Retours d'Audit</h3>
+            <p className="text-xs text-slate-400">{reportTitle} (ID : {reportId})</p>
           </div>
         </div>
         <span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-1 rounded-full flex items-center gap-1">
-          <CheckCircle className="w-3.5 h-3.5" /> SHA-256 Verified Report
+          <CheckCircle className="w-3.5 h-3.5" /> Rapport Vérifié SHA-256
         </span>
       </div>
 
       {/* Comments List */}
       <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
         {loading ? (
-          <div className="text-center py-6 text-xs text-slate-500">Loading feedback...</div>
+          <div className="text-center py-6 text-xs text-slate-500">Chargement des retours...</div>
         ) : comments.length > 0 ? (
           comments.map(c => (
             <div key={c.id} className="p-3 bg-slate-950 border border-slate-800 rounded-lg">
@@ -95,7 +95,7 @@ export const ReportCommentsPanel: React.FC<ReportCommentsPanelProps> = ({
                 </div>
                 <span className="text-[10px] text-slate-500 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {new Date(c.created_at).toLocaleString()}
+                  {new Date(c.created_at).toLocaleString('fr-FR')}
                 </span>
               </div>
               <p className="text-xs text-slate-300">{c.content}</p>
@@ -103,7 +103,7 @@ export const ReportCommentsPanel: React.FC<ReportCommentsPanelProps> = ({
           ))
         ) : (
           <div className="text-center py-6 text-xs text-slate-500">
-            No audit feedback on this report yet.
+            Aucun retour d'audit sur ce rapport pour le moment.
           </div>
         )}
       </div>
@@ -114,7 +114,7 @@ export const ReportCommentsPanel: React.FC<ReportCommentsPanelProps> = ({
           type="text"
           value={newComment}
           onChange={e => setNewComment(e.target.value)}
-          placeholder="Add report review feedback or mention auditor (@name)..."
+          placeholder="Ajouter une observation ou mentionner l'auditeur (@nom)..."
           className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
         />
         <button
@@ -123,7 +123,7 @@ export const ReportCommentsPanel: React.FC<ReportCommentsPanelProps> = ({
           className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition"
         >
           <Send className="w-3.5 h-3.5" />
-          Submit Feedback
+          Envoyer la remarque
         </button>
       </form>
     </div>
