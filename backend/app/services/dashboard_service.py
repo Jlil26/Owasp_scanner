@@ -21,19 +21,23 @@ class DashboardService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_admin_dashboard(self, company_id: uuid.UUID) -> AdminDashboardResponse:
-        total_tenants = 1
-        total_users = self.db.execute(
-            select(func.count(User.id)).where(User.company_id == company_id)
-        ).scalar() or 0
-
-        total_scans = self.db.execute(
-            select(func.count(ScanJob.id)).where(ScanJob.company_id == company_id)
-        ).scalar() or 0
-
-        vulnerabilities = list(self.db.execute(
-            select(Vulnerability).where(Vulnerability.company_id == company_id)
-        ).scalars().all())
+    def get_admin_dashboard(self, company_id: Optional[uuid.UUID] = None) -> AdminDashboardResponse:
+        if company_id is None:
+            total_tenants = self.db.execute(select(func.count(Company.id))).scalar() or 1
+            total_users = self.db.execute(select(func.count(User.id))).scalar() or 0
+            total_scans = self.db.execute(select(func.count(ScanJob.id))).scalar() or 0
+            vulnerabilities = list(self.db.execute(select(Vulnerability)).scalars().all())
+        else:
+            total_tenants = 1
+            total_users = self.db.execute(
+                select(func.count(User.id)).where(User.company_id == company_id)
+            ).scalar() or 0
+            total_scans = self.db.execute(
+                select(func.count(ScanJob.id)).where(ScanJob.company_id == company_id)
+            ).scalar() or 0
+            vulnerabilities = list(self.db.execute(
+                select(Vulnerability).where(Vulnerability.company_id == company_id)
+            ).scalars().all())
 
         total_vulnerabilities = len(vulnerabilities)
         now = datetime.now(timezone.utc)

@@ -39,10 +39,11 @@ class AnalyticsService:
     def __init__(self, db: Session):
         self.db = db
 
-    def calculate_security_score(self, company_id: uuid.UUID) -> SecurityScoreResponse:
-        vulnerabilities = list(self.db.execute(
-            select(Vulnerability).where(Vulnerability.company_id == company_id)
-        ).scalars().all())
+    def calculate_security_score(self, company_id: Optional[uuid.UUID] = None) -> SecurityScoreResponse:
+        query = select(Vulnerability)
+        if company_id is not None:
+            query = query.where(Vulnerability.company_id == company_id)
+        vulnerabilities = list(self.db.execute(query).scalars().all())
 
         now = datetime.now(timezone.utc)
         
@@ -106,10 +107,11 @@ class AnalyticsService:
             historical_scores=historical
         )
 
-    def get_owasp_breakdown(self, company_id: uuid.UUID) -> OwaspBreakdownResponse:
-        vulnerabilities = list(self.db.execute(
-            select(Vulnerability).where(Vulnerability.company_id == company_id)
-        ).scalars().all())
+    def get_owasp_breakdown(self, company_id: Optional[uuid.UUID] = None) -> OwaspBreakdownResponse:
+        query = select(Vulnerability)
+        if company_id is not None:
+            query = query.where(Vulnerability.company_id == company_id)
+        vulnerabilities = list(self.db.execute(query).scalars().all())
 
         total = len(vulnerabilities)
         cat_counts: Dict[str, Dict[str, int]] = {
