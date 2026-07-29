@@ -24,7 +24,17 @@ import { ScanProgressWidget } from './widgets/ScanProgressWidget';
 import { TopRisksWidget } from './widgets/TopRisksWidget';
 
 export const BusinessDashboardModule: React.FC = () => {
-  const [role, setRole] = useState<'admin' | 'auditor' | 'employee'>('admin');
+  const [role, setRole] = useState<'admin' | 'auditor' | 'employee'>(() => {
+    try {
+      const authStorage = localStorage.getItem('owasp_scan_pro_auth_v1.0');
+      if (authStorage) {
+        const parsed = JSON.parse(authStorage);
+        if (parsed.user?.role === 'AUDITOR') return 'auditor';
+        if (parsed.user?.role === 'EMPLOYEE') return 'employee';
+      }
+    } catch (e) {}
+    return 'admin';
+  });
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -34,6 +44,7 @@ export const BusinessDashboardModule: React.FC = () => {
 
   const fetchDashboardData = async (selectedRole: string) => {
     setLoading(true);
+    let isDemo = false;
     try {
       const authStorage = localStorage.getItem('owasp_scan_pro_auth_v1.0');
       let token = null;
@@ -41,6 +52,9 @@ export const BusinessDashboardModule: React.FC = () => {
         try {
           const parsed = JSON.parse(authStorage);
           token = parsed.token;
+          if (parsed.company?.id === 'pme-demo-01' || token?.startsWith('jwt-demo')) {
+            isDemo = true;
+          }
         } catch (e) {
           // ignore
         }
@@ -62,37 +76,72 @@ export const BusinessDashboardModule: React.FC = () => {
       throw new Error(`HTTP ${res.status}`);
     } catch (err) {
       console.warn('Backend API unavailable or error, using fallback dashboard metrics', err);
-      // Fallback default metrics per role so UI NEVER gets stuck loading!
-      if (selectedRole === 'admin') {
-        setData({
-          total_tenants: 1,
-          total_users: 12,
-          total_scans: 28,
-          total_vulnerabilities: 45,
-          active_remediations: 14,
-          overdue_slas: 2,
-          remediation_rate: 68.9,
-          security_score: 82,
-          security_grade: 'B',
-          severity_distribution: { critical: 3, high: 8, medium: 18, low: 12, info: 4 },
-          status_distribution: { new: 5, assigned: 8, in_progress: 6, resolved: 14, verified: 8, closed: 3, reopened: 1 }
-        });
-      } else if (selectedRole === 'auditor') {
-        setData({
-          assigned_targets: 8,
-          total_scans_executed: 24,
-          vulnerabilities_discovered: 37,
-          pending_verifications: 6,
-          severity_distribution: { critical: 2, high: 7, medium: 15, low: 10, info: 3 }
-        });
+      // Fallback: If DEMO, show demo metrics; if real/new company, show clean zero metrics!
+      if (isDemo) {
+        if (selectedRole === 'admin') {
+          setData({
+            total_tenants: 1,
+            total_users: 12,
+            total_scans: 28,
+            total_vulnerabilities: 45,
+            active_remediations: 14,
+            overdue_slas: 2,
+            remediation_rate: 68.9,
+            security_score: 82,
+            security_grade: 'B',
+            severity_distribution: { critical: 3, high: 8, medium: 18, low: 12, info: 4 },
+            status_distribution: { new: 5, assigned: 8, in_progress: 6, resolved: 14, verified: 8, closed: 3, reopened: 1 }
+          });
+        } else if (selectedRole === 'auditor') {
+          setData({
+            assigned_targets: 8,
+            total_scans_executed: 24,
+            vulnerabilities_discovered: 37,
+            pending_verifications: 6,
+            severity_distribution: { critical: 2, high: 7, medium: 15, low: 10, info: 3 }
+          });
+        } else {
+          setData({
+            assigned_vulnerabilities: 9,
+            in_progress_count: 4,
+            resolved_count: 5,
+            overdue_count: 1,
+            severity_distribution: { critical: 1, high: 2, medium: 4, low: 2, info: 0 }
+          });
+        }
       } else {
-        setData({
-          assigned_vulnerabilities: 9,
-          in_progress_count: 4,
-          resolved_count: 5,
-          overdue_count: 1,
-          severity_distribution: { critical: 1, high: 2, medium: 4, low: 2, info: 0 }
-        });
+        // Clean initial metrics for new companies ready for production tests
+        if (selectedRole === 'admin') {
+          setData({
+            total_tenants: 1,
+            total_users: 1,
+            total_scans: 0,
+            total_vulnerabilities: 0,
+            active_remediations: 0,
+            overdue_slas: 0,
+            remediation_rate: 100,
+            security_score: 100,
+            security_grade: 'A',
+            severity_distribution: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
+            status_distribution: { new: 0, assigned: 0, in_progress: 0, resolved: 0, verified: 0, closed: 0, reopened: 0 }
+          });
+        } else if (selectedRole === 'auditor') {
+          setData({
+            assigned_targets: 0,
+            total_scans_executed: 0,
+            vulnerabilities_discovered: 0,
+            pending_verifications: 0,
+            severity_distribution: { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
+          });
+        } else {
+          setData({
+            assigned_vulnerabilities: 0,
+            in_progress_count: 0,
+            resolved_count: 0,
+            overdue_count: 0,
+            severity_distribution: { critical: 0, high: 0, medium: 0, low: 0, info: 0 }
+          });
+        }
       }
     } finally {
       setLoading(false);
@@ -101,7 +150,7 @@ export const BusinessDashboardModule: React.FC = () => {
 
   return (
     <div className="space-y-6 text-slate-100 font-sans">
-      {/* Role Switcher Header Bar */}
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-900/90 border border-slate-800 rounded-2xl p-4 gap-4 shadow-xl">
         <div className="flex items-center space-x-3">
           <div className="p-3 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20">
@@ -109,52 +158,12 @@ export const BusinessDashboardModule: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-base font-bold text-slate-100 tracking-tight">Security Analytics & Intelligence Center</h3>
-              <span className="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-mono font-bold rounded-md uppercase">
-                Sprint 8
-              </span>
+              <h3 className="text-base font-bold text-slate-100 tracking-tight">Tableau de bord & Analytiques de Sécurité</h3>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Role-tailored security supervision dashboards, OWASP analytics, and real-time telemetry
+              Supervision de la sécurité, analytiques OWASP et métriques en temps réel
             </p>
           </div>
-        </div>
-
-        {/* Role Select Buttons */}
-        <div className="flex items-center space-x-1.5 bg-slate-950 p-1.5 rounded-xl border border-slate-800 self-stretch sm:self-auto">
-          <button
-            onClick={() => setRole('admin')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center space-x-1.5 ${
-              role === 'admin'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Super Admin</span>
-          </button>
-          <button
-            onClick={() => setRole('auditor')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center space-x-1.5 ${
-              role === 'auditor'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Auditor</span>
-          </button>
-          <button
-            onClick={() => setRole('employee')}
-            className={`px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center space-x-1.5 ${
-              role === 'employee'
-                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span>Employee</span>
-          </button>
         </div>
       </div>
 

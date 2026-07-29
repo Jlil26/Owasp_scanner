@@ -152,14 +152,10 @@ export const EmployeeLayout: React.FC<EmployeeLayoutProps> = ({
             </h1>
           </div>
 
-          {/* Role Switcher */}
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1 bg-[#F4F4F5] p-1 rounded-xl text-xs">
-              <span className="text-[#71717A] px-2 text-[11px] font-medium">Changer rôle :</span>
-              <button onClick={() => onSwitchRole('SUPER_ADMIN')} className="px-2.5 py-1 text-[#71717A] hover:text-[#18181B] rounded-lg">Admin</button>
-              <button onClick={() => onSwitchRole('AUDITOR')} className="px-2.5 py-1 text-[#71717A] hover:text-[#18181B] rounded-lg">Auditeur</button>
-              <button onClick={() => onSwitchRole('EMPLOYEE')} className="px-2.5 py-1 bg-[#16A34A] text-white rounded-lg font-bold">Employé</button>
-            </div>
+          <div className="flex items-center space-x-3 text-xs">
+            <span className="px-3 py-1.5 bg-emerald-50 text-emerald-700 font-semibold rounded-xl border border-emerald-200">
+              {company.name}
+            </span>
           </div>
         </header>
 

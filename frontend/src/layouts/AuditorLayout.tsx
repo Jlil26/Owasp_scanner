@@ -187,7 +187,7 @@ export const AuditorLayout: React.FC<AuditorLayoutProps> = ({
             </h1>
           </div>
 
-          {/* Quick Launch Button + Role Switcher */}
+          {/* Quick Launch Button */}
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setActiveTab('scanner')}
@@ -196,13 +196,6 @@ export const AuditorLayout: React.FC<AuditorLayoutProps> = ({
               <Play className="w-3.5 h-3.5" />
               <span>Lancer un Scan</span>
             </button>
-
-            <div className="flex items-center space-x-1 bg-[#F4F4F5] p-1 rounded-xl text-xs">
-              <span className="text-[#71717A] px-2 text-[11px] font-medium">Changer rôle :</span>
-              <button onClick={() => onSwitchRole('SUPER_ADMIN')} className="px-2.5 py-1 text-[#71717A] hover:text-[#18181B] rounded-lg">Admin</button>
-              <button onClick={() => onSwitchRole('AUDITOR')} className="px-2.5 py-1 bg-[#2563EB] text-white rounded-lg font-bold">Auditeur</button>
-              <button onClick={() => onSwitchRole('EMPLOYEE')} className="px-2.5 py-1 text-[#71717A] hover:text-[#18181B] rounded-lg">Employé</button>
-            </div>
           </div>
         </header>
 

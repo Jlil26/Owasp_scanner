@@ -66,16 +66,28 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     'dashboard' | 'company' | 'users' | 'roles' | 'assets' | 'targets' | 'scans' | 'vulnerabilities' | 'reports' | 'stats' | 'notifications' | 'audit_logs' | 'settings' | 'qa_cert'
   >('dashboard');
 
-  const [teamList, setTeamList] = useState<TeamMember[]>([
-    { id: user.id, firstName: user.first_name, lastName: user.last_name, name: `${user.first_name} ${user.last_name}`, email: user.email, role: 'SUPER_ADMIN', status: 'Actif', password: '••••••••' },
-    { id: 'usr-aud-01', firstName: 'Sophie', lastName: 'Martin', name: 'Sophie Martin', email: 'auditor@pme.com', role: 'AUDITOR', status: 'Actif', password: '••••••••' },
-    { id: 'usr-emp-01', firstName: 'Thomas', lastName: 'Bernard', name: 'Thomas Bernard', email: 'employee@pme.com', role: 'EMPLOYEE', status: 'Actif', password: '••••••••' }
-  ]);
+  const [teamList, setTeamList] = useState<TeamMember[]>(() => {
+    if (company.id === 'pme-demo-01' || user.email === 'admin@pme.com') {
+      return [
+        { id: user.id, firstName: user.first_name, lastName: user.last_name, name: `${user.first_name} ${user.last_name}`, email: user.email, role: 'SUPER_ADMIN', status: 'Actif', password: '••••••••' },
+        { id: 'usr-aud-01', firstName: 'Sophie', lastName: 'Martin', name: 'Sophie Martin', email: 'auditor@pme.com', role: 'AUDITOR', status: 'Actif', password: '••••••••' },
+        { id: 'usr-emp-01', firstName: 'Thomas', lastName: 'Bernard', name: 'Thomas Bernard', email: 'employee@pme.com', role: 'EMPLOYEE', status: 'Actif', password: '••••••••' }
+      ];
+    }
+    return [
+      { id: user.id, firstName: user.first_name, lastName: user.last_name, name: `${user.first_name} ${user.last_name}`, email: user.email, role: 'SUPER_ADMIN', status: 'Actif', password: '••••••••' }
+    ];
+  });
 
-  const [targetsList, setTargetsList] = useState([
-    { id: 'tgt-01', name: 'Application E-Commerce PME', url: 'https://shop.company-pme.fr', type: 'Web App', status: 'Vérifié' },
-    { id: 'tgt-02', name: 'API Gateway Backend', url: 'https://api.company-pme.fr', type: 'REST API', status: 'Vérifié' }
-  ]);
+  const [targetsList, setTargetsList] = useState(() => {
+    if (company.id === 'pme-demo-01' || user.email === 'admin@pme.com') {
+      return [
+        { id: 'tgt-01', name: 'Application E-Commerce PME', url: 'https://shop.company-pme.fr', type: 'Web App', status: 'Vérifié' },
+        { id: 'tgt-02', name: 'API Gateway Backend', url: 'https://api.company-pme.fr', type: 'REST API', status: 'Vérifié' }
+      ];
+    }
+    return [];
+  });
 
   // New User Form State
   const [newUserEmail, setNewUserEmail] = useState('');
@@ -367,7 +379,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Main Workspace Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#FAFAFC]">
-        {/* Topbar (64px) with SecAD-08 Constraint Indicator & Role Switcher */}
+        {/* Topbar (64px) */}
         <header className="h-16 bg-white border-b border-[#ECECF2] px-6 flex items-center justify-between shadow-xs">
           <div>
             <h1 className="text-base font-bold text-[#18181B] flex items-center gap-2">
@@ -376,34 +388,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             </h1>
           </div>
 
-          {/* SecAD-08 Constraint Badge + Demo Role Switcher */}
-          <div className="flex items-center space-x-3">
-            <div className="px-3 py-1.5 bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] text-[11px] font-mono font-bold rounded-xl flex items-center space-x-1.5">
-              <AlertOctagon className="w-3.5 h-3.5 text-[#DC2626]" />
-              <span>Règle SecAD-08 : Lancement Scan Interdit en Admin</span>
-            </div>
-
-            <div className="flex items-center space-x-1 bg-[#F4F4F5] p-1 rounded-xl text-xs">
-              <span className="text-[#71717A] px-2 text-[11px] font-medium">Changer rôle :</span>
-              <button
-                onClick={() => onSwitchRole('SUPER_ADMIN')}
-                className="px-2.5 py-1 bg-[#6D28D9] text-white rounded-lg font-bold"
-              >
-                Admin
-              </button>
-              <button
-                onClick={() => onSwitchRole('AUDITOR')}
-                className="px-2.5 py-1 text-[#71717A] hover:text-[#18181B] rounded-lg"
-              >
-                Auditeur
-              </button>
-              <button
-                onClick={() => onSwitchRole('EMPLOYEE')}
-                className="px-2.5 py-1 text-[#71717A] hover:text-[#18181B] rounded-lg"
-              >
-                Employé
-              </button>
-            </div>
+          <div className="flex items-center space-x-3 text-xs">
+            <span className="px-3 py-1.5 bg-purple-50 text-purple-700 font-semibold rounded-xl border border-purple-200">
+              {company.name}
+            </span>
           </div>
         </header>
 

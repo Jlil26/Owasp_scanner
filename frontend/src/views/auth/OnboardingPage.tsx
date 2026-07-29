@@ -103,29 +103,19 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Étape 2 : Inviter votre Auditeur & votre Développeur</h3>
-                  <p className="text-slate-400">Attribuez les rôles pour la gestion des scans et la résolution des failles.</p>
+                  <h3 className="text-sm font-bold text-white">Étape 2 : Gestion future de vos collaborateurs</h3>
+                  <p className="text-slate-400">Pour le moment, seul votre compte Administrateur PME est actif.</p>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">E-mail de l'Auditeur Sécurité (AUDITOR)</label>
-                <input
-                  type="email"
-                  value={auditorEmail}
-                  onChange={e => setAuditorEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 font-medium mb-1">E-mail du Développeur Lead (EMPLOYEE)</label>
-                <input
-                  type="email"
-                  value={employeeEmail}
-                  onChange={e => setEmployeeEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500"
-                />
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                <div className="flex items-center space-x-2 text-purple-300 font-bold">
+                  <CheckCircle2 className="w-4 h-4 text-purple-400" />
+                  <span>Création différée des accès par le Super Admin</span>
+                </div>
+                <p className="text-slate-300 leading-relaxed text-[11px]">
+                  Après validation de l'inscription, vous accéderez au Dashboard. Depuis le menu <strong className="text-white">Utilisateurs</strong>, vous pourrez ajouter vos propres comptes <strong>Auditeur Sécurité</strong> et <strong>Développeur / Employé</strong> en leur définissant leurs identifiants et mots de passe.
+                </p>
               </div>
 
               <div className="flex items-center space-x-3 mt-4">
