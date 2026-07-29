@@ -10,7 +10,7 @@ from app.models.company import Company
 from app.models.enums import UserStatus
 
 class UserRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def get_by_email(self, email: str) -> Optional[User]:

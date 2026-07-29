@@ -6,7 +6,7 @@ from sqlalchemy import select, delete
 from app.models.role import Role, Permission, RolePermission
 
 class RoleRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def get_all_roles(self) -> List[Role]:

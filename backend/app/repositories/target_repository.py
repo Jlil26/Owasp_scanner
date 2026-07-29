@@ -8,7 +8,7 @@ from app.models.target import Target
 from app.schemas.target import TargetCreate, TargetUpdate
 
 class TargetRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def get_by_id(self, target_id: uuid.UUID, company_id: Optional[uuid.UUID] = None) -> Optional[Target]:

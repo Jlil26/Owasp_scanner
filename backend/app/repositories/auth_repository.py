@@ -9,7 +9,7 @@ from app.models.audit import AuditLog
 from app.models.enums import AuditActionStatus
 
 class AuthRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def create_session(

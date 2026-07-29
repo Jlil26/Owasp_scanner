@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.report import Report
 
 class ReportRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def create_report(

@@ -7,7 +7,7 @@ from app.models.notification import Notification
 from app.models.enums import NotificationType
 
 class NotificationRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def create_notification(

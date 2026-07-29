@@ -8,7 +8,7 @@ from app.models.audit import AuditLog
 from app.models.enums import AuditActionStatus
 
 class AuditRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def get_logs(

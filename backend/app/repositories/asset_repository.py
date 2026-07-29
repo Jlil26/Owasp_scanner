@@ -8,7 +8,7 @@ from app.models.asset import Asset
 from app.schemas.asset import AssetCreate, AssetUpdate
 
 class AssetRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def get_by_id(self, asset_id: uuid.UUID, company_id: Optional[uuid.UUID] = None) -> Optional[Asset]:

@@ -7,7 +7,7 @@ from app.models.company import Company
 from app.schemas.company import CompanyCreate, CompanyUpdate
 
 class CompanyRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
 
     def get_by_id(self, company_id: uuid.UUID) -> Optional[Company]:

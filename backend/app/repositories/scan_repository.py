@@ -8,6 +8,9 @@ from app.models.scan import ScanJob, ToolExecution
 from app.models.enums import ScanStatus, ToolType, ToolExecutionStatus
 
 class ScanRepository:
+    def __init__(self, db: Optional[Session] = None):
+        self.db = db
+
     def create_scan_job(
         self,
         db: Session,

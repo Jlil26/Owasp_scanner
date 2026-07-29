@@ -7,6 +7,9 @@ from app.models.finding import Finding
 from app.models.scan import ScanJob
 
 class FindingRepository:
+    def __init__(self, db: Optional[Session] = None):
+        self.db = db
+
     def create_finding(
         self,
         db: Session,
