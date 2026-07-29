@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Optional, Tuple, Dict, Any
-from sqlalchemy.orm Session
+from sqlalchemy.orm import Session
 from sqlalchemy import select, func, desc
 
 from app.models.finding import Finding
