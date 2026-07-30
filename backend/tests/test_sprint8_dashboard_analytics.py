@@ -9,14 +9,15 @@ from app.models.company import Company
 from app.models.user import User
 from app.models.role import Role
 from app.models.target import Target
-from app.models.scan import ScanJob, ScanJobStatus
+from app.models.scan import ScanJob
 from app.models.vulnerability import Vulnerability, VulnerabilityAssignment
 from app.models.enums import (
     CompanyStatus,
     UserStatus,
     SystemRoleName,
     VulnerabilitySeverity,
-    VulnerabilityStatus
+    VulnerabilityStatus,
+    ScanStatus
 )
 from app.services.analytics_service import AnalyticsService
 from app.services.dashboard_service import DashboardService

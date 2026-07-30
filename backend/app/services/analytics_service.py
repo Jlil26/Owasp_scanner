@@ -6,10 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.models.company import Company
 from app.models.user import User
-from app.models.scan import ScanJob, ScanJobStatus
+from app.models.scan import ScanJob
 from app.models.vulnerability import Vulnerability, VulnerabilityAssignment
 from app.models.audit import AuditLog
-from app.models.enums import VulnerabilitySeverity, VulnerabilityStatus
+from app.models.enums import VulnerabilitySeverity, VulnerabilityStatus, ScanStatus
 from app.schemas.analytics import (
     SecurityScoreResponse,
     OwaspCategoryCount,
@@ -194,7 +194,7 @@ class AnalyticsService:
 
     def get_realtime_feed(self, company_id: uuid.UUID) -> RealtimeFeedResponse:
         active_scans = self.db.execute(
-            select(func.count(ScanJob.id)).where(ScanJob.company_id == company_id, ScanJob.status == ScanJobStatus.RUNNING)
+            select(func.count(ScanJob.id)).where(ScanJob.company_id == company_id, ScanJob.status == ScanStatus.RUNNING)
         ).scalar() or 0
 
         vulnerabilities = list(self.db.execute(
