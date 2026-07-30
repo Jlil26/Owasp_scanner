@@ -2,7 +2,7 @@ import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.models.enums import ScanStatus, ToolExecutionStatus, ToolType
