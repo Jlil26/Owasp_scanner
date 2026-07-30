@@ -32,6 +32,31 @@ class RefreshTokenResponseData(BaseModel):
 class LogoutRequest(BaseModel):
     refresh_token: Optional[str] = None
 
+class RegisterCompanyRequest(BaseModel):
+    admin_name: str
+    email: EmailStr
+    password: str
+    company_name: str
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    accept_terms: Optional[bool] = True
+
+class CompanySummary(BaseModel):
+    id: str
+    name: str
+    slug: Optional[str] = None
+    phone: Optional[str] = None
+    country: Optional[str] = None
+    plan: Optional[str] = "PME_STARTER"
+    created_at: Optional[str] = None
+
+class RegisterCompanyResponseData(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    user: UserSummary
+    company: CompanySummary
+
 class UserMeResponseData(BaseModel):
     id: str
     email: str

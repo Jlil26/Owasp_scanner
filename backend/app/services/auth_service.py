@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import (
     verify_password,
+    get_password_hash,
     create_access_token,
     create_refresh_token,
     decode_jwt
@@ -17,7 +18,9 @@ from app.schemas.auth import (
     LoginResponseData,
     UserSummary,
     RefreshTokenResponseData,
-    UserMeResponseData
+    UserMeResponseData,
+    RegisterCompanyResponseData,
+    CompanySummary
 )
 from app.models.enums import UserStatus, AuditActionStatus
 
@@ -26,6 +29,124 @@ class AuthService:
         self.db = db
         self.user_repo = UserRepository(db)
         self.auth_repo = AuthRepository(db)
+
+    def register_company(
+        self,
+        admin_name: str,
+        email: str,
+        password: str,
+        company_name: str,
+        phone: Optional[str] = None,
+        country: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None
+    ) -> RegisterCompanyResponseData:
+        # 1. Check if email exists
+        existing_user = self.user_repo.get_by_email(email)
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Un compte avec cette adresse e-mail existe déjà."
+            )
+
+        # 2. Find or Create SUPER_ADMIN role
+        from sqlalchemy import select
+        from app.models.role import Role
+        stmt = select(Role).where(Role.name == "SUPER_ADMIN")
+        role = self.db.execute(stmt).scalars().first()
+        if not role:
+            role = Role(name="SUPER_ADMIN", description="Super Administrator")
+            self.db.add(role)
+            self.db.commit()
+            self.db.refresh(role)
+
+        # 3. Create Company
+        from app.models.company import Company
+        company = Company(
+            name=company_name,
+            email=email.lower().strip(),
+            phone=phone,
+            country=country or "France"
+        )
+        self.db.add(company)
+        self.db.commit()
+        self.db.refresh(company)
+
+        # 4. Hash Password & Split Names
+        password_hash = get_password_hash(password)
+        names = admin_name.strip().split(" ")
+        first_name = names[0] if names else admin_name
+        last_name = " ".join(names[1:]) if len(names) > 1 else "Admin"
+
+        # 5. Create User
+        user = self.user_repo.create(
+            company_id=company.id,
+            email=email,
+            password_hash=password_hash,
+            role_id=role.id,
+            first_name=first_name,
+            last_name=last_name,
+            status=UserStatus.ACTIVE
+        )
+
+        # 6. Generate Tokens
+        now = datetime.now(timezone.utc)
+        access_token = create_access_token(
+            subject=str(user.id),
+            company_id=str(company.id),
+            role="SUPER_ADMIN"
+        )
+        refresh_token_str = create_refresh_token(subject=str(user.id))
+
+        # Store session / refresh token
+        refresh_expires = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        self.auth_repo.create_refresh_token(
+            user_id=user.id,
+            token=refresh_token_str,
+            expires_at=refresh_expires
+        )
+
+        self.auth_repo.log_audit_event(
+            company_id=company.id,
+            user_id=user.id,
+            action="COMPANY_REGISTERED",
+            resource_type="AUTH",
+            ip_address=ip_address,
+            user_agent=user_agent,
+            status=AuditActionStatus.SUCCESS,
+            details={"company_name": company_name, "email": email}
+        )
+
+        permissions = self.user_repo.get_user_permissions(user.id)
+
+        user_summary = UserSummary(
+            id=str(user.id),
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            company_id=str(company.id),
+            company_name=company.name,
+            role="SUPER_ADMIN",
+            permissions=permissions
+        )
+
+        company_summary = CompanySummary(
+            id=str(company.id),
+            name=company.name,
+            slug=company.name.lower().replace(" ", "-"),
+            phone=company.phone,
+            country=company.country,
+            plan="PME_STARTER",
+            created_at=company.created_at.isoformat() if company.created_at else now.isoformat()
+        )
+
+        return RegisterCompanyResponseData(
+            access_token=access_token,
+            refresh_token=refresh_token_str,
+            token_type="bearer",
+            user=user_summary,
+            company=company_summary
+        )
 
     def login(
         self,

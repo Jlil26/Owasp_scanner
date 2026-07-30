@@ -9,12 +9,46 @@ from app.schemas.auth import (
     LogoutRequest,
     LoginResponseData,
     RefreshTokenResponseData,
-    UserMeResponseData
+    UserMeResponseData,
+    RegisterCompanyRequest,
+    RegisterCompanyResponseData
 )
 from app.schemas.common import StandardResponse
 from app.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@router.post(
+    "/register-company",
+    response_model=StandardResponse[RegisterCompanyResponseData],
+    summary="Register new PME company and Super Admin account",
+    status_code=status.HTTP_201_CREATED
+)
+def register_company(
+    request: Request,
+    body: RegisterCompanyRequest,
+    db: Session = Depends(get_db)
+):
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+
+    auth_service = AuthService(db)
+    result = auth_service.register_company(
+        admin_name=body.admin_name,
+        email=body.email,
+        password=body.password,
+        company_name=body.company_name,
+        phone=body.phone,
+        country=body.country,
+        ip_address=ip_address,
+        user_agent=user_agent
+    )
+
+    return StandardResponse(
+        success=True,
+        message="Company and Super Admin account created successfully",
+        data=result
+    )
 
 @router.post(
     "/login",
