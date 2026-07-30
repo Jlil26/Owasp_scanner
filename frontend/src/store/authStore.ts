@@ -3,13 +3,13 @@ import { User, Company, AuthState, RegisterCompanyPayload, UserRole } from '../t
 
 const STORAGE_KEY = 'owasp_scan_pro_auth_v1.0';
 
-const saveRegisteredUserLocal = (user: User, company: Company) => {
+export const saveRegisteredUserLocal = (user: User, company: Company, password?: string) => {
   try {
     const existingStr = localStorage.getItem('owasp_scan_pro_registered_users');
     let list = existingStr ? JSON.parse(existingStr) : [];
     if (!Array.isArray(list)) list = [];
     list = list.filter((item: any) => item.email?.toLowerCase() !== user.email.toLowerCase());
-    list.push({ email: user.email, user, company });
+    list.push({ email: user.email.toLowerCase(), user, company, password });
     localStorage.setItem('owasp_scan_pro_registered_users', JSON.stringify(list));
   } catch (e) {
     console.error('Failed to save user locally', e);
@@ -146,12 +146,31 @@ export function useAuthStore() {
       if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
         const data = await res.json();
         if (data.success && data.data) {
-          saveRegisteredUserLocal(data.data.user, data.data.company);
+          const userObj: User = {
+            id: data.data.user.id,
+            company_id: data.data.user.company_id,
+            email: data.data.user.email,
+            first_name: data.data.user.first_name || '',
+            last_name: data.data.user.last_name || '',
+            role: (data.data.user.role || 'SUPER_ADMIN') as UserRole,
+            is_active: true,
+            created_at: new Date().toISOString()
+          };
+          const companyObj: Company = {
+            id: data.data.user.company_id,
+            name: data.data.user.company_name || 'Ma PME Security',
+            slug: (data.data.user.company_name || 'pme').toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            phone: '+33 1 42 68 55 00',
+            country: 'France',
+            plan: 'PME_STARTER',
+            created_at: new Date().toISOString()
+          };
+          saveRegisteredUserLocal(userObj, companyObj, password);
           setState({
             isAuthenticated: true,
             token: data.data.access_token,
-            user: data.data.user,
-            company: data.data.company,
+            user: userObj,
+            company: companyObj,
             currentRoute: 'workspace',
             activeWorkspaceTab: 'dashboard',
             isOnboarded: true
@@ -160,7 +179,7 @@ export function useAuthStore() {
         }
       }
     } catch (err: any) {
-      console.warn('Backend login endpoint unavailable or timed out, using fallback auth:', err);
+      console.warn('Backend login endpoint unavailable or timed out, using local/fallback auth:', err);
     }
 
     // 2. Check local saved registered accounts
@@ -169,7 +188,7 @@ export function useAuthStore() {
       if (savedUsersStr) {
         const users = JSON.parse(savedUsersStr);
         const found = users.find((u: any) => u.email?.toLowerCase() === cleanEmail.toLowerCase());
-        if (found) {
+        if (found && found.user) {
           setState({
             isAuthenticated: true,
             token: `jwt-local-${found.user.id}`,
@@ -188,34 +207,61 @@ export function useAuthStore() {
 
     // 3. Fallback seamless login for any email/password provided by user
     if (cleanEmail && cleanEmail.includes('@') && password && password.length >= 1) {
-      const usernamePart = cleanEmail.split('@')[0];
-      const fallbackCompany: Company = {
-        id: `pme-usr-${usernamePart.toLowerCase()}`,
-        name: `${usernamePart.toUpperCase()} Security PME`,
-        slug: usernamePart.toLowerCase(),
-        phone: '+33 1 42 68 55 00',
-        country: 'France',
-        plan: 'PME_STARTER',
-        created_at: new Date().toISOString()
-      };
+      const usernamePart = cleanEmail.split('@')[0].toLowerCase();
+
+      // Infer role intelligently from email address instead of forcing SUPER_ADMIN
+      let inferredRole: UserRole = 'EMPLOYEE';
+      if (usernamePart.includes('admin') || usernamePart.includes('super')) {
+        inferredRole = 'SUPER_ADMIN';
+      } else if (usernamePart.includes('audit')) {
+        inferredRole = 'AUDITOR';
+      } else {
+        // If an existing registered company exists, attach to it as EMPLOYEE or AUDITOR
+        inferredRole = 'EMPLOYEE';
+      }
+
+      // Reuse existing company if available
+      let targetCompany: Company | null = null;
+      try {
+        const savedStr = localStorage.getItem('owasp_scan_pro_registered_users');
+        if (savedStr) {
+          const list = JSON.parse(savedStr);
+          if (Array.isArray(list) && list.length > 0 && list[0].company) {
+            targetCompany = list[0].company;
+          }
+        }
+      } catch (e) {}
+
+      if (!targetCompany) {
+        targetCompany = {
+          id: `pme-usr-${usernamePart}`,
+          name: `${usernamePart.toUpperCase()} Security PME`,
+          slug: usernamePart,
+          phone: '+33 1 42 68 55 00',
+          country: 'France',
+          plan: 'PME_STARTER',
+          created_at: new Date().toISOString()
+        };
+      }
+
       const fallbackUser: User = {
-        id: `usr-${usernamePart.toLowerCase()}`,
-        company_id: fallbackCompany.id,
+        id: `usr-${usernamePart}-${Date.now().toString(36)}`,
+        company_id: targetCompany.id,
         email: cleanEmail,
         first_name: usernamePart.charAt(0).toUpperCase() + usernamePart.slice(1),
-        last_name: 'Admin',
-        role: 'SUPER_ADMIN',
+        last_name: inferredRole === 'SUPER_ADMIN' ? 'Admin' : inferredRole === 'AUDITOR' ? 'Auditor' : 'Member',
+        role: inferredRole,
         is_active: true,
         created_at: new Date().toISOString()
       };
 
-      saveRegisteredUserLocal(fallbackUser, fallbackCompany);
+      saveRegisteredUserLocal(fallbackUser, targetCompany, password);
 
       setState({
         isAuthenticated: true,
         token: `jwt-fallback-${fallbackUser.id}`,
         user: fallbackUser,
-        company: fallbackCompany,
+        company: targetCompany,
         currentRoute: 'workspace',
         activeWorkspaceTab: 'dashboard',
         isOnboarded: true
@@ -282,6 +328,21 @@ export function useAuthStore() {
       AUDITOR: { first: 'Sophie', last: 'SecurityAuditor', email: 'auditor@pme.com' },
       EMPLOYEE: { first: 'Thomas', last: 'DevLeadEmployee', email: 'employee@pme.com' }
     };
+
+    // Pre-save all 3 demo roles to registered users
+    (Object.keys(roleNames) as UserRole[]).forEach(r => {
+      const u: User = {
+        id: `usr-${r.toLowerCase()}-01`,
+        company_id: demoCompany.id,
+        email: roleNames[r].email,
+        first_name: roleNames[r].first,
+        last_name: roleNames[r].last,
+        role: r,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      saveRegisteredUserLocal(u, demoCompany, 'password');
+    });
 
     const demoUser: User = {
       id: `usr-${role.toLowerCase()}-01`,

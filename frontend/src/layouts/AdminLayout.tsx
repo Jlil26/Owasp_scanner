@@ -28,6 +28,7 @@ import {
   X
 } from 'lucide-react';
 import { User as UserType, Company, UserRole } from '../types/auth';
+import { saveRegisteredUserLocal } from '../store/authStore';
 import { BusinessDashboardModule } from '../modules/dashboard/BusinessDashboardModule';
 import { QAAuditModule } from '../modules/qa/QAAuditModule';
 import { MonitoringPlatformModule } from '../modules/monitoring/MonitoringPlatformModule';
@@ -67,6 +68,33 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   >('dashboard');
 
   const [teamList, setTeamList] = useState<TeamMember[]>(() => {
+    // 1. Load saved local registered users for this company
+    try {
+      const savedStr = localStorage.getItem('owasp_scan_pro_registered_users');
+      if (savedStr) {
+        const list = JSON.parse(savedStr);
+        if (Array.isArray(list)) {
+          const companyMembers = list
+            .filter((item: any) => item.company?.id === company.id || item.user?.company_id === company.id)
+            .map((item: any) => ({
+              id: item.user.id,
+              firstName: item.user.first_name,
+              lastName: item.user.last_name || '',
+              name: `${item.user.first_name} ${item.user.last_name || ''}`.trim(),
+              email: item.user.email,
+              role: item.user.role as 'SUPER_ADMIN' | 'AUDITOR' | 'EMPLOYEE',
+              status: 'Actif' as const,
+              password: item.password || '••••••••'
+            }));
+          if (companyMembers.length > 0) {
+            return companyMembers;
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load team list from local storage', e);
+    }
+
     if (company.id === 'pme-demo-01' || user.email === 'admin@pme.com') {
       return [
         { id: user.id, firstName: user.first_name, lastName: user.last_name, name: `${user.first_name} ${user.last_name}`, email: user.email, role: 'SUPER_ADMIN', status: 'Actif', password: '••••••••' },
@@ -119,19 +147,53 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     e.preventDefault();
     if (newUserEmail && newUserFirstName) {
       const passToSet = newUserPassword || generatePassword();
-      const createdUser: TeamMember = {
+      const cleanEmail = newUserEmail.trim();
+
+      const createdMember: TeamMember = {
         id: `usr-${Date.now()}`,
         firstName: newUserFirstName,
         lastName: newUserLastName || '',
         name: `${newUserFirstName} ${newUserLastName || ''}`.trim(),
-        email: newUserEmail,
+        email: cleanEmail,
         role: newUserRole,
         status: 'Actif',
         password: passToSet
       };
 
-      setTeamList([...teamList, createdUser]);
-      setUserNotification(`Utilisateur ${createdUser.name} créé avec le mot de passe : ${passToSet}`);
+      const newUserObj: UserType = {
+        id: createdMember.id,
+        company_id: company.id,
+        email: cleanEmail,
+        first_name: createdMember.firstName,
+        last_name: createdMember.lastName,
+        role: createdMember.role,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+
+      // 1. Save locally for fallback/offline auth and session persistence
+      saveRegisteredUserLocal(newUserObj, company, passToSet);
+
+      // 2. Attempt backend creation as well if API server is up
+      fetch('/api/v1/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: passToSet,
+          first_name: createdMember.firstName,
+          last_name: createdMember.lastName,
+          role_id: createdMember.role === 'SUPER_ADMIN' ? '00000000-0000-0000-0000-000000000001' :
+                  createdMember.role === 'AUDITOR' ? '00000000-0000-0000-0000-000000000002' :
+                  '00000000-0000-0000-0000-000000000003'
+        })
+      }).catch(err => console.warn('Backend user creation notice:', err));
+
+      setTeamList(prev => [...prev.filter(u => u.email.toLowerCase() !== cleanEmail.toLowerCase()), createdMember]);
+      setUserNotification(`Utilisateur ${createdMember.name} (${createdMember.role}) créé avec succès. Mot de passe: ${passToSet}`);
       setNewUserEmail('');
       setNewUserFirstName('');
       setNewUserLastName('');
@@ -144,18 +206,32 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     e.preventDefault();
     if (!editingUser) return;
 
+    const passToSet = editPassword || editingUser.password || '••••••••';
+    const updatedUserObj: UserType = {
+      id: editingUser.id,
+      company_id: company.id,
+      email: editingUser.email,
+      first_name: editingUser.firstName,
+      last_name: editingUser.lastName || '',
+      role: editingUser.role,
+      is_active: editingUser.status === 'Actif',
+      created_at: new Date().toISOString()
+    };
+
+    saveRegisteredUserLocal(updatedUserObj, company, passToSet);
+
     setTeamList(teamList.map(u => {
       if (u.id === editingUser.id) {
         return {
           ...editingUser,
           name: `${editingUser.firstName} ${editingUser.lastName || ''}`.trim(),
-          password: editPassword ? editPassword : u.password
+          password: passToSet
         };
       }
       return u;
     }));
 
-    setUserNotification(`Compte et mot de passe mis à jour avec succès pour ${editingUser.firstName} ${editingUser.lastName}!`);
+    setUserNotification(`Compte et rôle mis à jour avec succès pour ${editingUser.firstName} ${editingUser.lastName}!`);
     setEditingUser(null);
     setEditPassword('');
     setTimeout(() => setUserNotification(null), 5000);
@@ -163,7 +239,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const handleDeleteUser = (userId: string, userName: string) => {
     if (confirm(`Voulez-vous vraiment supprimer le compte de ${userName} ?`)) {
-      setTeamList(teamList.filter(u => u.id !== userId));
+      setTeamList(prev => prev.filter(u => u.id !== userId));
+      try {
+        const savedStr = localStorage.getItem('owasp_scan_pro_registered_users');
+        if (savedStr) {
+          let list = JSON.parse(savedStr);
+          if (Array.isArray(list)) {
+            list = list.filter((item: any) => item.user?.id !== userId);
+            localStorage.setItem('owasp_scan_pro_registered_users', JSON.stringify(list));
+          }
+        }
+      } catch (e) {}
       setUserNotification(`Compte de ${userName} supprimé.`);
       setTimeout(() => setUserNotification(null), 4000);
     }
