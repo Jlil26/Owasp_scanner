@@ -82,17 +82,19 @@ class ScanManager:
 
     async def launch_scan_background(
         self,
-        db: Session,
+        db: Optional[Session],
         scan_job_id: uuid.UUID,
         user_id: uuid.UUID,
         owasp: Optional[List[str]] = None
     ):
-        await self.orchestrator.execute_scan_job(
-            db=db,
-            scan_job_id=scan_job_id,
-            user_id=user_id,
-            owasp_categories=owasp
-        )
+        from app.core.database import SessionLocal
+        with SessionLocal() as bg_db:
+            await self.orchestrator.execute_scan_job(
+                db=bg_db,
+                scan_job_id=scan_job_id,
+                user_id=user_id,
+                owasp_categories=owasp
+            )
 
     def cancel_scan(
         self,

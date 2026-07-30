@@ -85,7 +85,7 @@ export const ScannerModule: React.FC = () => {
     if (authStorage) {
       try {
         const parsed = JSON.parse(authStorage);
-        if (parsed.token && !parsed.token.startsWith('jwt-demo') && !parsed.token.startsWith('jwt-offline')) {
+        if (parsed.token) {
           headers['Authorization'] = `Bearer ${parsed.token}`;
         }
       } catch (e) {
@@ -187,120 +187,18 @@ export const ScannerModule: React.FC = () => {
     fetchFindings();
   }, []);
 
-  // Timer to continuously update scan progress gradually (5% -> 100%) and poll backend
+  // Real-time backend polling for scans and findings when a scan is active
   useEffect(() => {
     const hasRunning = scans.some(s => s.status === 'RUNNING' || s.status === 'PENDING');
     if (!hasRunning) return;
 
     const timer = setInterval(() => {
-      // 1. Try polling backend if available
       fetchScans();
-
-      // 2. Advance local/simulated active scans smoothly
-      setScans(prevScans => {
-        let updated = false;
-        const nextScans = prevScans.map(scan => {
-          if (scan.status !== 'RUNNING' && scan.status !== 'PENDING') return scan;
-
-          updated = true;
-          const inc = Math.floor(Math.random() * 5) + 5; // +5% to +10% per step
-          const nextProgress = Math.min(100, scan.progress + inc);
-          const isCompleted = nextProgress >= 100;
-
-          const newToolExecs = scan.tool_executions.map(te => {
-            let phaseLog = `[${te.tool_type}] Exploration & inspection de ${targetUrl} (${nextProgress}%)...`;
-            if (nextProgress < 30) {
-              phaseLog = `[${te.tool_type}] Phase 1: Empreinte réseau & découverte des services (${nextProgress}%)...`;
-            } else if (nextProgress < 75) {
-              phaseLog = `[${te.tool_type}] Phase 2: Exécution des règles OWASP & audits d'injection (${nextProgress}%)...`;
-            } else if (nextProgress < 100) {
-              phaseLog = `[${te.tool_type}] Phase 3: Analyse des résultats & normalisation des preuves (${nextProgress}%)...`;
-            } else {
-              phaseLog = `[${te.tool_type}] Analyse terminée avec succès (100%). Preuves indexées.`;
-            }
-
-            return {
-              ...te,
-              progress: nextProgress,
-              status: (isCompleted ? 'COMPLETED' : 'RUNNING') as 'COMPLETED' | 'RUNNING',
-              logs: phaseLog
-            };
-          });
-
-          const updatedScan: ScanJob = {
-            ...scan,
-            progress: nextProgress,
-            status: isCompleted ? 'COMPLETED' : 'RUNNING',
-            completed_at: isCompleted ? new Date().toISOString() : scan.completed_at,
-            tool_executions: newToolExecs
-          };
-
-          // Generate findings upon completion
-          if (isCompleted && scan.status !== 'COMPLETED') {
-            const newFindings: Finding[] = [
-              {
-                id: `find-sqli-${Date.now()}`,
-                scan_job_id: scan.id,
-                scanner_name: 'OWASP ZAP',
-                title: 'A03: Injection SQL - Paramètre "q" non assaini',
-                severity: 'High',
-                description: `Une vulnérabilité d'injection SQL aveugle a été détectée sur l'URL ${targetUrl}/api/v1/search?q=1' OR '1'='1. Un attaquant peut exfiltrer des données sensibles.`,
-                http_request: `GET /api/v1/search?q=1%27%20OR%201=1%20-- HTTP/1.1\nHost: ${targetUrl.replace('https://', '')}\nUser-Agent: OWASP-ZAP/2.14.0`,
-                http_response: `HTTP/1.1 200 OK\nContent-Type: application/json\n\n{"status":"success","data":[{"id":1,"user":"admin"}]}`,
-                evidence_notes: 'Requête renvoie un statut 200 OK avec le premier enregistrement malgré une syntaxe SQL invalide.',
-                created_at: new Date().toISOString()
-              },
-              {
-                id: `find-xss-${Date.now()}`,
-                scan_job_id: scan.id,
-                scanner_name: 'Nikto',
-                title: 'A01: Cross-Site Scripting (XSS) Refléte',
-                severity: 'Medium',
-                description: `L'en-tête ou le paramètre d'entrée sur ${targetUrl}/login réinjecte directement du code HTML/JS sans échappement HTML.`,
-                http_request: `POST /login HTTP/1.1\nHost: ${targetUrl.replace('https://', '')}\nContent-Type: application/x-www-form-urlencoded\n\nusername=<script>alert(1)</script>`,
-                http_response: `HTTP/1.1 200 OK\n\n<div className="error">Erreur pour <script>alert(1)</script></div>`,
-                evidence_notes: 'Payload exécuté directement sans balise CSP restrictive.',
-                created_at: new Date().toISOString()
-              },
-              {
-                id: `find-headers-${Date.now()}`,
-                scan_job_id: scan.id,
-                scanner_name: 'Nmap',
-                title: 'A05: En-têtes de Sécurité Manquants (CSP & HSTS)',
-                severity: 'Low',
-                description: 'Le serveur web ne définit ni Strict-Transport-Security ni Content-Security-Policy.',
-                http_request: `HEAD / HTTP/1.1\nHost: ${targetUrl.replace('https://', '')}`,
-                http_response: `HTTP/1.1 200 OK\nServer: nginx/1.24.0\nX-Powered-By: Express`,
-                evidence_notes: 'Divulgation de version serveur et absence d\'en-têtes HTTP de sécurité.',
-                created_at: new Date().toISOString()
-              }
-            ];
-
-            setFindings(prevF => {
-              const combined = [...newFindings, ...prevF];
-              localStorage.setItem('owasp_scan_pro_findings_v1', JSON.stringify(combined));
-              return combined;
-            });
-
-            setActionMessage(`Scan #${scan.id.substring(0, 8)} terminé à 100% ! 3 vulnérabilités détectées et ajoutées au Centre de Preuves.`);
-          }
-
-          if (activeScan?.id === scan.id) {
-            setActiveScan(updatedScan);
-          }
-
-          return updatedScan;
-        });
-
-        if (updated) {
-          localStorage.setItem('owasp_scan_pro_scans_v1', JSON.stringify(nextScans));
-        }
-        return nextScans;
-      });
+      fetchFindings();
     }, 2000);
 
     return () => clearInterval(timer);
-  }, [scans, activeScan, targetUrl]);
+  }, [scans]);
 
   const handleToggleTool = (tool: string) => {
     if (selectedTools.includes(tool)) {

@@ -69,7 +69,7 @@ class ScanOrchestrator:
         )
 
         # Run configured tools in parallel using WorkerManager
-        tasks = []
+        task_map = {}
         tool_exec_map: Dict[str, Any] = {}
 
         for tool_exec in scan_job.tool_executions:
@@ -85,59 +85,63 @@ class ScanOrchestrator:
                 started_at=datetime.now(timezone.utc)
             )
 
-            tasks.append(
-                self.worker_manager.execute_worker(
-                    tool_name=tool_str,
-                    target_url=target_url,
-                    owasp_categories=owasp_categories
-                )
+            coro = self.worker_manager.execute_worker(
+                tool_name=tool_str,
+                target_url=target_url,
+                owasp_categories=owasp_categories
             )
+            task = asyncio.create_task(coro)
+            task_map[task] = tool_str
 
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # Update initial running progress
+        self.job_manager.update_job_progress(db, scan_job_id)
 
-        collected_results = []
-        for res in results:
-            if isinstance(res, Exception):
-                logger.error(f"[ORCHESTRATOR] Worker exception: {str(res)}")
-                continue
+        # Process workers as they complete in real-time
+        for completed_task in asyncio.as_completed(list(task_map.keys())):
+            try:
+                res = await completed_task
+                tool_str = res.tool_name.lower()
+                tool_exec = tool_exec_map.get(tool_str)
 
-            tool_str = res.tool_name.lower()
-            tool_exec = tool_exec_map.get(tool_str)
-
-            if tool_exec:
-                exec_status = ToolExecutionStatus.COMPLETED if res.status == "COMPLETED" else ToolExecutionStatus.FAILED
-                self.scan_repo.update_tool_execution(
-                    db,
-                    tool_exec.id,
-                    status=exec_status,
-                    progress=100 if res.status == "COMPLETED" else 0,
-                    return_code=res.return_code,
-                    logs=res.logs,
-                    completed_at=datetime.now(timezone.utc)
-                )
-
-                # Collect & Normalize Findings
-                for raw_f in res.raw_findings:
-                    norm_data = self.result_normalizer.normalize_finding(
-                        scan_job_id=scan_job_id,
-                        tool_execution_id=tool_exec.id,
-                        tool_name=res.tool_name,
-                        raw_finding=raw_f
+                if tool_exec:
+                    exec_status = ToolExecutionStatus.COMPLETED if res.status == "COMPLETED" else ToolExecutionStatus.FAILED
+                    self.scan_repo.update_tool_execution(
+                        db,
+                        tool_exec.id,
+                        status=exec_status,
+                        progress=100 if res.status == "COMPLETED" else 0,
+                        return_code=res.return_code,
+                        logs=res.logs,
+                        completed_at=datetime.now(timezone.utc)
                     )
 
-                    self.finding_repo.create_finding(
-                        db=db,
-                        scan_job_id=scan_job_id,
-                        scanner_name=norm_data["scanner_name"],
-                        title=norm_data["title"],
-                        tool_execution_id=tool_exec.id,
-                        severity=norm_data["severity"],
-                        description=norm_data["description"],
-                        http_request=norm_data["http_request"],
-                        http_response=norm_data["http_response"],
-                        evidence_notes=norm_data["evidence_notes"],
-                        raw_data=norm_data["raw_data"]
-                    )
+                    # Collect & Normalize Findings
+                    for raw_f in res.raw_findings:
+                        norm_data = self.result_normalizer.normalize_finding(
+                            scan_job_id=scan_job_id,
+                            tool_execution_id=tool_exec.id,
+                            tool_name=res.tool_name,
+                            raw_finding=raw_f
+                        )
+
+                        self.finding_repo.create_finding(
+                            db=db,
+                            scan_job_id=scan_job_id,
+                            scanner_name=norm_data["scanner_name"],
+                            title=norm_data["title"],
+                            tool_execution_id=tool_exec.id,
+                            severity=norm_data["severity"],
+                            description=norm_data["description"],
+                            http_request=norm_data["http_request"],
+                            http_response=norm_data["http_response"],
+                            evidence_notes=norm_data["evidence_notes"],
+                            raw_data=norm_data["raw_data"]
+                        )
+
+                    # Incrementally update job progress in DB after each tool completes
+                    self.job_manager.update_job_progress(db, scan_job_id)
+            except Exception as e:
+                logger.error(f"[ORCHESTRATOR] Worker exception: {str(e)}")
 
         # Finalize Scan Job progress
         self.job_manager.update_job_progress(db, scan_job_id)
