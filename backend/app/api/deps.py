@@ -58,7 +58,8 @@ def get_current_user(
             user = User(
                 id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
                 email="auditor@owasp.local",
-                full_name="Default Auditor",
+                first_name="Default",
+                last_name="Auditor",
                 status=UserStatus.ACTIVE
             )
             return user
@@ -67,7 +68,8 @@ def get_current_user(
         user = User(
             id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
             email="auditor@owasp.local",
-            full_name="Default Auditor",
+            first_name="Default",
+            last_name="Auditor",
             status=UserStatus.ACTIVE
         )
 
