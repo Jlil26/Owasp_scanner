@@ -187,29 +187,45 @@ export const ScannerModule: React.FC = () => {
     fetchFindings();
   }, []);
 
-  // Timer to continuously update scan progress from 35% -> 100%
+  // Timer to continuously update scan progress gradually (5% -> 100%) and poll backend
   useEffect(() => {
     const hasRunning = scans.some(s => s.status === 'RUNNING' || s.status === 'PENDING');
     if (!hasRunning) return;
 
     const timer = setInterval(() => {
+      // 1. Try polling backend if available
+      fetchScans();
+
+      // 2. Advance local/simulated active scans smoothly
       setScans(prevScans => {
         let updated = false;
         const nextScans = prevScans.map(scan => {
           if (scan.status !== 'RUNNING' && scan.status !== 'PENDING') return scan;
 
           updated = true;
-          const nextProgress = Math.min(100, scan.progress + 20);
+          const inc = Math.floor(Math.random() * 5) + 5; // +5% to +10% per step
+          const nextProgress = Math.min(100, scan.progress + inc);
           const isCompleted = nextProgress >= 100;
 
-          const newToolExecs = scan.tool_executions.map(te => ({
-            ...te,
-            progress: nextProgress,
-            status: (isCompleted ? 'COMPLETED' : 'RUNNING') as 'COMPLETED' | 'RUNNING',
-            logs: isCompleted
-              ? `[${te.tool_type}] Analyse terminée (100%). Preuves collectées.`
-              : `[${te.tool_type}] Inspection de ${targetUrl} en cours... (${nextProgress}%)`
-          }));
+          const newToolExecs = scan.tool_executions.map(te => {
+            let phaseLog = `[${te.tool_type}] Exploration & inspection de ${targetUrl} (${nextProgress}%)...`;
+            if (nextProgress < 30) {
+              phaseLog = `[${te.tool_type}] Phase 1: Empreinte réseau & découverte des services (${nextProgress}%)...`;
+            } else if (nextProgress < 75) {
+              phaseLog = `[${te.tool_type}] Phase 2: Exécution des règles OWASP & audits d'injection (${nextProgress}%)...`;
+            } else if (nextProgress < 100) {
+              phaseLog = `[${te.tool_type}] Phase 3: Analyse des résultats & normalisation des preuves (${nextProgress}%)...`;
+            } else {
+              phaseLog = `[${te.tool_type}] Analyse terminée avec succès (100%). Preuves indexées.`;
+            }
+
+            return {
+              ...te,
+              progress: nextProgress,
+              status: (isCompleted ? 'COMPLETED' : 'RUNNING') as 'COMPLETED' | 'RUNNING',
+              logs: phaseLog
+            };
+          });
 
           const updatedScan: ScanJob = {
             ...scan,
@@ -281,7 +297,7 @@ export const ScannerModule: React.FC = () => {
         }
         return nextScans;
       });
-    }, 1500);
+    }, 2000);
 
     return () => clearInterval(timer);
   }, [scans, activeScan, targetUrl]);

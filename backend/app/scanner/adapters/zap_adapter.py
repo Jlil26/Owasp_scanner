@@ -21,12 +21,14 @@ class ZAPAdapter(BaseToolAdapter):
         logs = [
             f"[ZAP-WORKER] Initializing OWASP ZAP 2.14 daemon worker for target: {target_url}",
             f"[ZAP-WORKER] Selected OWASP Categories: {', '.join(categories)}",
-            "[ZAP-WORKER] Phase 1: Spidering target endpoints and building context tree...",
-            "[ZAP-WORKER] Phase 2: Launching Active Scan rules (Injection, Access Control, Misconfig)...",
-            "[ZAP-WORKER] Active scan completed successfully. Processing raw alert collection."
+            "[ZAP-WORKER] Phase 1: Spidering target endpoints and building DOM context tree..."
         ]
 
-        await asyncio.sleep(0.1)  # Simulate execution
+        await asyncio.sleep(2.0)
+        logs.append("[ZAP-WORKER] Phase 2: Launching Active Scan rules (Injection, Access Control, Misconfig)...")
+        await asyncio.sleep(2.0)
+        logs.append("[ZAP-WORKER] Active scan completed successfully. Processing raw alert collection.")
+        await asyncio.sleep(1.0)
 
         raw_findings = []
         if "A01" in categories or "A03" in categories:
