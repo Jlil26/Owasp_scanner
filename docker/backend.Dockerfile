@@ -9,8 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     nmap \
-    nikto \
     curl \
+    git \
+    perl \
+    libnet-ssleay-perl \
+    ca-certificates \
+    && git clone --depth 1 https://github.com/sullo/nikto.git /opt/nikto \
+    && ln -s /opt/nikto/program/nikto.pl /usr/local/bin/nikto \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/requirements.txt /app/
